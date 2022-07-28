@@ -4,7 +4,7 @@ export function average(arr: number[]): number {
     let total = 0
     const len = arr.length
 
-    for (let i = 0 i < len i++) {
+    for (let i = 0; i < len; i++) {
         total += arr[i]
     }
 

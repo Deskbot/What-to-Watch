@@ -151,7 +151,7 @@ export async function getData(movie: string): Promise<AllData> {
 
     return {
         movie,
-        aggregateScore: aggregateScore(gogData, metacriticData, steamData),
+        aggregateScore: 0, // aggregateScore(gogData, metacriticData, steamData),
         // gog: gogData,
         // metacritic: metacriticData,
         // steam: steamData,
