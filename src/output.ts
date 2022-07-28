@@ -110,9 +110,9 @@ export async function getCsv(movie: string): Promise<string> {
     const newData: Record<CsvHeaders, string | number | undefined> = {
         "Movie": data.movie,
         "Aggregate Score": aggregateScoreFormula,
-        "Metacritic Name": 0,
-        "Metacritic Critic Score": 0,
-        "Metacritic User Score": 0,
+        "Metacritic Name": data.metacritic?.name,
+        "Metacritic Critic Score": data.metacritic?.metascore,
+        "Metacritic User Score": data.metacritic?.userscore,
         "IMDB Name": 0,
         "IMDB Score": 0,
         "Rotten Tomatoes Name": 0,
