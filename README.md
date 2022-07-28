@@ -1,6 +1,6 @@
-# What-to-Play
+# What-to-Watch
 
-This program takes a list of game names and outputs their scores given by various websites and how long it takes to beat the game.
+This program takes a list of movie names and outputs their scores given by various websites and how long it takes to beat the game.
 
 Data is collected from:
 
