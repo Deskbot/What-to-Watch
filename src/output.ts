@@ -1,9 +1,11 @@
+import { getImdbData, ImdbResult } from "./imdb"
 import { getMetacriticData, MetacriticResult } from "./metacritic"
 import { average, csvFriendly, printable } from "./util"
 
 export interface AllData {
     movie: string
     aggregateScore?: number
+    imdb?: ImdbResult
     metacritic?: MetacriticResult
 }
 
@@ -23,19 +25,22 @@ export const csvHeaderRow = csvHeaders.join(",")
 
 export type CsvHeaders = typeof csvHeaders[number]
 
-export function aggregateScore(metacriticData: MetacriticResult | undefined): number | undefined {
+export function aggregateScore(
+    metacriticData: MetacriticResult | undefined,
+    imdbData: ImdbResult | undefined,
+): number | undefined {
     const scores = [] as number[]
 
-    // const gog_score = gogData?.score
+    const imdb_score = imdbData?.score
     const metacritic_metascore = metacriticData?.metascore
     const metacritic_userscore = metacriticData?.userscore
     // const steam_allTimeScore = steamResult?.allTimeScore
     // const steam_recentScore = steamResult?.recentScore
 
     // // make all scores out of 100
-    // if (gog_score !== undefined) {
-    //     scores.push(gog_score * 20)
-    // }
+    if (typeof imdb_score === "number") {
+        scores.push(imdb_score * 10)
+    }
     if (typeof metacritic_metascore === "number") {
         scores.push(metacritic_metascore)
     }
@@ -110,8 +115,8 @@ export async function getCsv(movie: string): Promise<string> {
         "Metacritic Name": data.metacritic?.name,
         "Metacritic Critic Score": data.metacritic?.metascore,
         "Metacritic User Score": data.metacritic?.userscore,
-        "IMDB Name": 0,
-        "IMDB Score": 0,
+        "IMDB Name": data.imdb?.name,
+        "IMDB Score": data.imdb?.score,
         "Rotten Tomatoes Name": 0,
         "Rotten Tomatoes Critic Score": 0,
         "Rotten Tomatoes User Score": 0,
@@ -135,20 +140,20 @@ export async function getData(movie: string): Promise<AllData> {
         return undefined
     }
 
-    // const gogDataProm =        gog.getData(movie)       .catch(err => handleError(err, "GOG"))
+    const imdbDataProm =       getImdbData(movie)      .catch(err => handleError(err, "IMDB"))
     const metacriticDataProm = getMetacriticData(movie).catch(err => handleError(err, "Metacritic"))
     // const steamDataProm =      steam.getData(movie)     .catch(err => handleError(err, "Steam"))
     // const hltbDataProm =       hltb.getData(movie)      .catch(err => handleError(err, "How Long to Beat"))
 
     // spawn all promises before blocking on their results
-    // const gogData = await gogDataProm
+    const imdbData = await imdbDataProm
     const metacriticData = await metacriticDataProm
     // const steamData = await steamDataProm
 
     return {
         movie,
-        aggregateScore: aggregateScore(metacriticData),
-        // gog: gogData,
+        aggregateScore: aggregateScore(metacriticData, imdbData),
+        imdb: imdbData,
         metacritic: metacriticData,
         // steam: steamData,
         // hltb: await hltbDataProm,
