@@ -6,18 +6,11 @@ import { closestSearchResult } from "./search"
 
 export type MetacriticScore = number | "tbd" | "not found"
 
-type BothScores = Pick<MetacriticResult, "metascore" | "userscore">
-
 export interface MetacriticResult {
     name: string
     url: string
     metascore: MetacriticScore
     userscore: MetacriticScore
-}
-
-interface TargetMovie {
-    name: string
-    reviewUrl: string
 }
 
 export async function getMetacriticData(movie: string): Promise<MetacriticResult | undefined> {
@@ -26,8 +19,8 @@ export async function getMetacriticData(movie: string): Promise<MetacriticResult
 
     const { name, reviewUrl } = productData
 
-    const reviewPageText = await fetch(reviewUrl).then(res => res.text());
-    const reviewPage = cheerio.load(reviewPageText);
+    const reviewPageText = await fetch(reviewUrl).then(res => res.text())
+    const reviewPage = cheerio.load(reviewPageText)
 
     const { metascore, userscore } = await getScores(reviewPage)
 
@@ -38,6 +31,8 @@ export async function getMetacriticData(movie: string): Promise<MetacriticResult
         userscore,
     }
 }
+
+type BothScores = Pick<MetacriticResult, "metascore" | "userscore">
 
 async function getScores(scorePage: cheerio.Root): Promise<BothScores> {
     const product = scorePage.root().find(".product_header")
@@ -70,6 +65,11 @@ async function getScores(scorePage: cheerio.Root): Promise<BothScores> {
         metascore: parseScore(metascoreStr),
         userscore: parseScore(userscoreStr),
     }
+}
+
+interface TargetMovie {
+    name: string
+    reviewUrl: string
 }
 
 async function search(movie: string): Promise<TargetMovie | undefined> {
