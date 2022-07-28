@@ -4,13 +4,15 @@ import * as querystring from "querystring"
 import { bug, nonNaN } from "./util"
 import { closestSearchResult } from "./search"
 
-type BothScores = { metascore?: number, userscore?: number }
+type Score = number | "tbd" | "not found"
+
+type BothScores = { metascore: Score, userscore: Score }
 
 export interface MetacriticResult {
     name: string
     url: string
-    metascore?: number
-    userscore?: number
+    metascore: Score
+    userscore: Score
 }
 
 interface TargetMovie {
@@ -38,26 +40,35 @@ export async function getData(movie: string): Promise<MetacriticResult | undefin
 }
 
 async function getScores(scorePage: cheerio.Root): Promise<BothScores> {
-    const metascoreStr =
-        scorePage(".product_scores")
-            .find(".main_details") // different
-            .find(".metascore_w")
-            .find("span") // different
-            .first()
-            .text()
-            .trim()
+    const product = scorePage.root().find(".product_header")
 
-    const userscoreStr =
-        scorePage(".product_scores")
-            .find(".side_details") // different
-            .find(".metascore_w")
-            .first()
-            .text()
-            .trim()
+    const metascoreStr = product.find(".ms_wrapper")
+        .find(".metascore_w")
+        .first()
+        .text()
+        .trim()
+
+    const userscoreStr = product.find(".us_wrapper")
+        .find(".metascore_w")
+        .first()
+        .text()
+        .trim()
+
+    function parseScore(str: string) {
+        if (str  == "") return "not found"
+
+        if (str == "tbd") return "tbd"
+
+        const f = parseFloat(metascoreStr)
+
+        if (Number.isNaN(f)) return "not found"
+
+        return f
+    }
 
     return {
-        metascore: nonNaN(parseFloat(metascoreStr), undefined),
-        userscore: nonNaN(parseFloat(userscoreStr), undefined),
+        metascore: parseScore(metascoreStr),
+        userscore: parseScore(userscoreStr),
     }
 }
 
