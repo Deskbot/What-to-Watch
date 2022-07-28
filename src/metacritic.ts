@@ -50,11 +50,11 @@ async function getScores(scorePage: cheerio.Root): Promise<BothScores> {
         .trim()
 
     function parseScore(str: string) {
-        if (str  == "") return "not found"
+        if (str == "") return "not found"
 
         if (str == "tbd") return "tbd"
 
-        const f = parseFloat(metascoreStr)
+        const f = parseFloat(str)
 
         if (Number.isNaN(f)) return "not found"
 
