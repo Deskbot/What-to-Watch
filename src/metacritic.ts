@@ -1,18 +1,18 @@
 import * as cheerio from "cheerio"
 import fetch from "node-fetch"
 import * as querystring from "querystring"
-import { bug, nonNaN } from "./util"
+import { bug } from "./util"
 import { closestSearchResult } from "./search"
 
-type Score = number | "tbd" | "not found"
+export type MetacriticScore = number | "tbd" | "not found"
 
-type BothScores = { metascore: Score, userscore: Score }
+type BothScores = Pick<MetacriticResult, "metascore" | "userscore">
 
 export interface MetacriticResult {
     name: string
     url: string
-    metascore: Score
-    userscore: Score
+    metascore: MetacriticScore
+    userscore: MetacriticScore
 }
 
 interface TargetMovie {
@@ -20,7 +20,7 @@ interface TargetMovie {
     reviewUrl: string
 }
 
-export async function getData(movie: string): Promise<MetacriticResult | undefined> {
+export async function getMetacriticData(movie: string): Promise<MetacriticResult | undefined> {
     const productData = await search(movie)
     if (productData === undefined) return undefined
 

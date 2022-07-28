@@ -1,9 +1,10 @@
-import { count, getCellInCol, toHyperlink } from "./spreadsheet"
-import { average, bindUndefined, csvFriendly, printable } from "./util"
+import { getMetacriticData, MetacriticResult } from "./metacritic"
+import { csvFriendly, printable } from "./util"
 
 export interface AllData {
     movie: string
     aggregateScore?: number
+    metacritic?: MetacriticResult
 }
 
 export const csvHeaders = [
@@ -140,20 +141,20 @@ export async function getData(movie: string): Promise<AllData> {
     }
 
     // const gogDataProm =        gog.getData(movie)       .catch(err => handleError(err, "GOG"))
-    // const metacriticDataProm = metacritic.getData(movie).catch(err => handleError(err, "Metacritic"))
+    const metacriticDataProm = getMetacriticData(movie).catch(err => handleError(err, "Metacritic"))
     // const steamDataProm =      steam.getData(movie)     .catch(err => handleError(err, "Steam"))
     // const hltbDataProm =       hltb.getData(movie)      .catch(err => handleError(err, "How Long to Beat"))
 
-    // // spawn all promises before blocking on their results
+    // spawn all promises before blocking on their results
     // const gogData = await gogDataProm
-    // const metacriticData = await metacriticDataProm
+    const metacriticData = await metacriticDataProm
     // const steamData = await steamDataProm
 
     return {
         movie,
         aggregateScore: 0, // aggregateScore(gogData, metacriticData, steamData),
         // gog: gogData,
-        // metacritic: metacriticData,
+        metacritic: metacriticData,
         // steam: steamData,
         // hltb: await hltbDataProm,
     }

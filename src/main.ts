@@ -60,8 +60,6 @@ function printHelp() {
     console.log("Arguments:")
     console.log("-h | --help      : Print help.")
     console.log("--readme         : Print the readme.")
-    console.log("-p | --platforms : A comma separated list of platforms. On Metacritic where the score differs by platform, the best score is chosen. (default: all platforms)")
-    console.log("-c | --country   : A 2-character country code, used by Steam to tailor results. (default: US)")
     console.log("--json           : Output in JSON format (instead of CSV).")
     console.log("--rate-limit     : Set the maximum number of movies that can be queried simultaneously. If set too high, queries will be rejected by the websites queried. (default: 5)")
 }
@@ -69,16 +67,6 @@ function printHelp() {
 function printReadme() {
     fs.createReadStream(__dirname + "/../README.md")
         .pipe(process.stdout)
-}
-
-function validateCountry(country: string): string {
-    country = country.toUpperCase()
-    if (country.match(/^[A-Z]{2}$/)) {
-        return country
-    }
-
-    console.error("Invalid country code given. A two-character country code was required.")
-    process.exit(1)
 }
 
 function writeCsv(input: readline.Interface, getMovieInfo: (movie: string) => Promise<string>) {
