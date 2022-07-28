@@ -1,10 +1,10 @@
 import * as levenshtein from "fastest-levenshtein";
 import { LCS } from "js-lcs";
 
-export function closestSearchResult<T>(game: string, products: T[], getName: (product: T) => string): T | undefined {
+export function closestSearchResult<T>(movie: string, products: T[], getName: (product: T) => string): T | undefined {
     if (products.length === 0) return undefined;
 
-    const gameSanitised = sanitise(game);
+    const movieSanitised = sanitise(movie);
 
     let bestMatch: T | undefined;
 
@@ -16,18 +16,18 @@ export function closestSearchResult<T>(game: string, products: T[], getName: (pr
     for (const product of products) {
         const name = sanitise(getName(product));
 
-        const productLcs = LCS.size(gameSanitised, name);
+        const productLcs = LCS.size(movieSanitised, name);
 
         // maybe replace best match with a product that has a smaller LCS
         if (productLcs > matchLcs) {
             matchLcs = productLcs;
-            matchLevenshtein = levenshtein.distance(gameSanitised, name); // store in case needed
+            matchLevenshtein = levenshtein.distance(movieSanitised, name); // store in case needed
             bestMatch = product;
         }
 
         // if they match, fallback on levenshtein comparison
         else if (productLcs === matchLcs) {
-            const productLeven = levenshtein.distance(gameSanitised, name);
+            const productLeven = levenshtein.distance(movieSanitised, name);
             if (productLeven < matchLevenshtein) {
                 matchLevenshtein = productLeven;
                 bestMatch = product;

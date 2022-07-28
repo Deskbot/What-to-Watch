@@ -1,158 +1,122 @@
-import * as gog from "./gog";
-import * as hltb from "./howlongtobeat";
-import * as metacritic from "./metacritic";
-import * as steam from "./steam";
-import { MetacriticPlatform } from "./platform";
 import { count, getCellInCol, toHyperlink } from "./spreadsheet";
 import { average, bindUndefined, csvFriendly, printable } from "./util";
 
 export interface AllData {
-    game: string;
+    movie: string;
     aggregateScore?: number;
-    gog?: gog.GogResult;
-    hltb?: hltb.HowLongToBeatResult;
-    metacritic?: metacritic.MetacriticResult;
-    steam?: steam.SteamResult;
 }
 
 export const csvHeaders = [
-    "Game",
+    "Movie",
     "Aggregate Score",
     "Metacritic Name",
     "Metacritic Critic Score",
     "Metacritic User Score",
-    "Metacritic Release Date",
-    "Steam Name",
-    "Steam All Time % Positive",
-    "Steam Recent % Positive",
-    "Steam Release Date",
-    "GOG Name",
-    "GOG Score",
-    "How Long to Beat Name",
-    "How Long to Beat: Main Story",
-    "How Long to Beat: Main Story + Extra",
-    "How Long to Beat: Completionist",
-    "How Long to Beat: Solo",
-    "How Long to Beat: Co-Op",
-    "How Long to Beat: Vs.",
+    "IMDB Name",
+    "IMDB Score",
+    "Rotten Tomatoes Name",
+    "Rotten Tomatoes Critic Score",
+    "Rotten Tomatoes User Score",
 ] as const;
 export const csvHeaderRow = csvHeaders.join(",");
 
 export type CsvHeaders = typeof csvHeaders[number];
 
-export function aggregateScore(
-    gogData?: gog.GogResult,
-    metacriticData?: metacritic.MetacriticResult,
-    steamResult?: steam.SteamResult,
-): number | undefined {
-    let scores = [] as number[];
+export function aggregateScore(): number | undefined {
+    // let scores = [] as number[];
 
-    const gog_score = gogData?.score;
-    const metacritic_metascore = metacriticData?.metascore;
-    const metacritic_userscore = metacriticData?.userscore;
-    const steam_allTimeScore = steamResult?.allTimeScore;
-    const steam_recentScore = steamResult?.recentScore;
+    // const gog_score = gogData?.score;
+    // const metacritic_metascore = metacriticData?.metascore;
+    // const metacritic_userscore = metacriticData?.userscore;
+    // const steam_allTimeScore = steamResult?.allTimeScore;
+    // const steam_recentScore = steamResult?.recentScore;
 
-    // make all scores out of 100
-    if (gog_score !== undefined) {
-        scores.push(gog_score * 20);
-    }
-    if (metacritic_metascore !== undefined) {
-        scores.push(metacritic_metascore);
-    }
-    if (metacritic_userscore !== undefined) {
-        scores.push(metacritic_userscore * 10);
-    }
-    if (steam_allTimeScore !== undefined) {
-        scores.push(steam_allTimeScore);
-    }
-    if (steam_recentScore !== undefined) {
-        scores.push(steam_recentScore);
-    }
+    // // make all scores out of 100
+    // if (gog_score !== undefined) {
+    //     scores.push(gog_score * 20);
+    // }
+    // if (metacritic_metascore !== undefined) {
+    //     scores.push(metacritic_metascore);
+    // }
+    // if (metacritic_userscore !== undefined) {
+    //     scores.push(metacritic_userscore * 10);
+    // }
+    // if (steam_allTimeScore !== undefined) {
+    //     scores.push(steam_allTimeScore);
+    // }
+    // if (steam_recentScore !== undefined) {
+    //     scores.push(steam_recentScore);
+    // }
 
-    if (scores.length === 0) {
-        return undefined;
-    }
+    // if (scores.length === 0) {
+    //     return undefined;
+    // }
 
-    return parseFloat(average(scores).toFixed(1));
+    // return parseFloat(average(scores).toFixed(1));
+    return 0;
 }
 
 const aggregateScoreFormula = (function(): string {
     // get cell references
 
-    const gog_score = csvHeaders.indexOf("GOG Score") + 1;
-    const metacritic_metascore = csvHeaders.indexOf("Metacritic Critic Score") + 1;
-    const metacritic_userscore = csvHeaders.indexOf("Metacritic User Score") + 1;
-    const steam_allTimeScore = csvHeaders.indexOf("Steam All Time % Positive") + 1;
-    const steam_recentScore = csvHeaders.indexOf("Steam Recent % Positive") + 1;
+    // const gog_score = csvHeaders.indexOf("GOG Score") + 1;
+    // const metacritic_metascore = csvHeaders.indexOf("Metacritic Critic Score") + 1;
+    // const metacritic_userscore = csvHeaders.indexOf("Metacritic User Score") + 1;
+    // const steam_allTimeScore = csvHeaders.indexOf("Steam All Time % Positive") + 1;
+    // const steam_recentScore = csvHeaders.indexOf("Steam Recent % Positive") + 1;
 
-    const gog_score_cell = getCellInCol(gog_score);
-    const metacritic_metascore_cell = getCellInCol(metacritic_metascore);
-    const metacritic_userscore_cell = getCellInCol(metacritic_userscore);
-    const steam_allTimeScore_cell = getCellInCol(steam_allTimeScore);
-    const steam_recentScore_cell = getCellInCol(steam_recentScore);
+    // const gog_score_cell = getCellInCol(gog_score);
+    // const metacritic_metascore_cell = getCellInCol(metacritic_metascore);
+    // const metacritic_userscore_cell = getCellInCol(metacritic_userscore);
+    // const steam_allTimeScore_cell = getCellInCol(steam_allTimeScore);
+    // const steam_recentScore_cell = getCellInCol(steam_recentScore);
 
-    const cells = [
-        gog_score_cell,
-        metacritic_metascore_cell,
-        metacritic_userscore_cell,
-        steam_allTimeScore_cell,
-        steam_recentScore_cell,
-    ];
+    // const cells = [
+    //     gog_score_cell,
+    //     metacritic_metascore_cell,
+    //     metacritic_userscore_cell,
+    //     steam_allTimeScore_cell,
+    //     steam_recentScore_cell,
+    // ];
 
-    // normalise the scores to be out of 100
-    const scoreExpressions = [
-        `(${gog_score_cell} * 20)`,
-        `(${metacritic_metascore_cell})`,
-        `(${metacritic_userscore_cell} * 10)`,
-        `(${steam_allTimeScore_cell})`,
-        `(${steam_recentScore_cell})`,
-    ];
+    // // normalise the scores to be out of 100
+    // const scoreExpressions = [
+    //     `(${gog_score_cell} * 20)`,
+    //     `(${metacritic_metascore_cell})`,
+    //     `(${metacritic_userscore_cell} * 10)`,
+    //     `(${steam_allTimeScore_cell})`,
+    //     `(${steam_recentScore_cell})`,
+    // ];
 
-    // average the scores, ensure blank cells don't contribute to the average
-    const average = `(${scoreExpressions.join(" + ")}) / ${count(cells)}`;
+    // // average the scores, ensure blank cells don't contribute to the average
+    // const average = `(${scoreExpressions.join(" + ")}) / ${count(cells)}`;
 
-    return `=IFERROR(${average}, "")`;
+    // return `=IFERROR(${average}, "")`;
+
+    return "";
 })();
 
 /**
- * @param game Game to get data for
+ * @param movie Movie to get data for
  * @param platforms An array of platforms to consider Metacritic reviews for
  * @param country 2-character country code defined by "ISO 3166-1 alpha-2", used by Steam
  */
-export async function getCsv(
-    game: string,
-    platforms: MetacriticPlatform[],
-    country: string,
-): Promise<string> {
+export async function getCsv(movie: string): Promise<string> {
     const buffer = [] as string[];
 
-    const data = await getData(game, platforms, country);
+    const data = await getData(movie);
 
     const newData: Record<CsvHeaders, string | number | undefined> = {
-        "Game": data.game,
+        "Movie": data.movie,
         "Aggregate Score": aggregateScoreFormula,
-        "Metacritic Name": bindUndefined(data.metacritic, m => toHyperlink(m.url, m.name)),
-        "Metacritic Critic Score": data.metacritic?.metascore
-            ? toHyperlink(data.metacritic.metascoreUrl!, data.metacritic.metascore)
-            : "",
-        "Metacritic User Score": data.metacritic?.userscore
-            ? toHyperlink(data.metacritic.userscoreUrl!, data.metacritic.userscore)
-            : "",
-        "Metacritic Release Date": data.metacritic?.releaseDate,
-        "Steam Name": bindUndefined(data.steam, s => toHyperlink(s.url, s.name)),
-        "Steam All Time % Positive": data.steam?.allTimeScore,
-        "Steam Recent % Positive": data.steam?.recentScore,
-        "Steam Release Date": data.steam?.releaseDate,
-        "GOG Name": bindUndefined(data.gog, g => toHyperlink(g.url, g.name)),
-        "GOG Score": data.gog?.score,
-        "How Long to Beat Name": bindUndefined(data.hltb, h => toHyperlink(h.url, h.name)),
-        "How Long to Beat: Main Story": data.hltb?.times.mainStory,
-        "How Long to Beat: Main Story + Extra": data.hltb?.times.mainPlusExtra,
-        "How Long to Beat: Completionist": data.hltb?.times.completionist,
-        "How Long to Beat: Solo": data.hltb?.times.solo,
-        "How Long to Beat: Co-Op": data.hltb?.times.coop,
-        "How Long to Beat: Vs.": data.hltb?.times.vs,
+        "Metacritic Name": 0,
+        "Metacritic Critic Score": 0,
+        "Metacritic User Score": 0,
+        "IMDB Name": 0,
+        "IMDB Score": 0,
+        "Rotten Tomatoes Name": 0,
+        "Rotten Tomatoes Critic Score": 0,
+        "Rotten Tomatoes User Score": 0,
     };
 
     // iterate through in the same order every time guaranteed
@@ -164,50 +128,42 @@ export async function getCsv(
 }
 
 /**
- * @param game Game to get data for
+ * @param movie Movie to get data for
  * @param platforms An array of platforms to consider Metacritic reviews for
  * @param country 2-character country code defined by "ISO 3166-1 alpha-2", used by Steam
  */
-export async function getData(
-    game: string,
-    platforms: MetacriticPlatform[],
-    country: string,
-): Promise<AllData> {
-    const handleError = (err: any, website: string) => {
-        console.error(`Error: code failure, when getting "${game}" from ${website}`);
+export async function getData(movie: string): Promise<AllData> {
+    const handleError = (err: unknown, website: string) => {
+        console.error(`Error: code failure, when getting "${movie}" from ${website}`);
         console.error(err);
         return undefined;
     }
 
-    const gogDataProm =        gog.getData(game)                  .catch(err => handleError(err, "GOG"));
-    const metacriticDataProm = metacritic.getData(game, platforms).catch(err => handleError(err, "Metacritic"));
-    const steamDataProm =      steam.getData(game, country)       .catch(err => handleError(err, "Steam"));
-    const hltbDataProm =       hltb.getData(game)                 .catch(err => handleError(err, "How Long to Beat"));
+    // const gogDataProm =        gog.getData(movie)       .catch(err => handleError(err, "GOG"));
+    // const metacriticDataProm = metacritic.getData(movie).catch(err => handleError(err, "Metacritic"));
+    // const steamDataProm =      steam.getData(movie)     .catch(err => handleError(err, "Steam"));
+    // const hltbDataProm =       hltb.getData(movie)      .catch(err => handleError(err, "How Long to Beat"));
 
-    // spawn all promises before blocking on their results
-    const gogData = await gogDataProm;
-    const metacriticData = await metacriticDataProm;
-    const steamData = await steamDataProm;
+    // // spawn all promises before blocking on their results
+    // const gogData = await gogDataProm;
+    // const metacriticData = await metacriticDataProm;
+    // const steamData = await steamDataProm;
 
     return {
-        game,
+        movie,
         aggregateScore: aggregateScore(gogData, metacriticData, steamData),
-        gog: gogData,
-        metacritic: metacriticData,
-        steam: steamData,
-        hltb: await hltbDataProm,
+        // gog: gogData,
+        // metacritic: metacriticData,
+        // steam: steamData,
+        // hltb: await hltbDataProm,
     };
 }
 
 /**
- * @param game Game to get data for
+ * @param movie Movie to get data for
  * @param platforms An array of platforms to consider Metacritic reviews for
  * @param country 2-character country code defined by "ISO 3166-1 alpha-2", used by Steam
  */
-export async function getJson(
-    game: string,
-    platforms: MetacriticPlatform[],
-    country: string,
-): Promise<string> {
-    return JSON.stringify(await getData(game, platforms, country));
+export async function getJson(movie: string): Promise<string> {
+    return JSON.stringify(await getData(movie));
 }

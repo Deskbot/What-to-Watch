@@ -1,6 +1,6 @@
 # What-to-Watch
 
-This program takes a list of movie names and outputs their scores given by various websites and how long it takes to beat the game.
+This program takes a list of movie names and outputs their scores given by various websites and how long it takes to beat the movie.
 
 Data is collected from:
 
@@ -67,7 +67,7 @@ Usage: command (file path)? (arguments)*
 
 If a file is given, the file will be used as input, otherwise stdin is used.
 
-Input format: game titles on separate lines
+Input format: movie titles on separate lines
 
 Arguments:
 -h | --help      : Print help.
@@ -75,10 +75,10 @@ Arguments:
 -p | --platforms : A comma separated list of platforms. On Metacritic where the score differs by platform, the best score is chosen. (default: all platforms)
 -c | --country   : A 2-character country code, used by Steam to tailor results. (default: US)
 --json           : Output in JSON format (instead of CSV).
---rate-limit     : Set the maximum number of games that can be queried simultaneously. If set too high, queries will be rejected by the websites queried. (defaults to 5)
+--rate-limit     : Set the maximum number of movies that can be queried simultaneously. If set too high, queries will be rejected by the websites queried. (defaults to 5)
 ```
 
-e.g. `what-to-play list_of_games.txt --json --platforms ps5,playstation4,switch,xbox series x,pc`
+e.g. `what-to-play list_of_movies.txt --json --platforms ps5,playstation4,switch,xbox series x,pc`
 
 Platform strings are parsed forgivingly.
 
@@ -100,22 +100,22 @@ The scores are reported the same as on the website the score came from, they are
 
 The CSV columns and JSON fields are pretty self-explanatory and may change over time, so they are not specified here.
 
-The output includes the title of the game as interpreted by each website. You should check this to be sure that the information you're seeing is actually for the given game.
+The output includes the title of the movie as interpreted by each website. You should check this to be sure that the information you're seeing is actually for the given movie.
 
-For various reasons, a game or score might not be found from the website. As a CSV, this leaves an empty field. In JSON, the field is not present.
+For various reasons, a movie or score might not be found from the website. As a CSV, this leaves an empty field. In JSON, the field is not present.
 
 ### Understanding the Numbers
 
 Number                 | Maximum | Unit  | Measure of
 -----------------------|---------|-------|------------
 GOG rating             |   5     |       | Mean user-submitted rating
-Metacritic Metascore   | 100     |       | Game Critic review scores put through some formula
+Metacritic Metascore   | 100     |       | Movie Critic review scores put through some formula
 Metacritic user score  |  10     |       | Presumably the mean user-submitted rating
 Steam rating           | 100     | %     | Percent of users who gave a positive review
 Aggregate score        | 100     |       | Mean of all other score fields, each normalised to be out of 100. Each score is weighted equally. If the score isn't present, it doesn't contribute to the average.
 How Long to Beat times |   ∞     | hours | Time
 
-The aggregate score exists so that there will be a score column filled in for every row for ease of sorting. However, doing this will skew games that exist on Steam further to the top because Steam's review system means it yields scores closer to 100.
+The aggregate score exists so that there will be a score column filled in for every row for ease of sorting. However, doing this will skew movies that exist on Steam further to the top because Steam's review system means it yields scores closer to 100.
 
 ### Release Dates
 
@@ -123,9 +123,9 @@ These will vary by release platform. The data provided is to give a rough idea. 
 
 ### Shortcomings
 
-Games with similar names could be confused for one another. An effort has been made to choose the best search result offered by each website, which is more accurate than taking the top result.
+Movies with similar names could be confused for one another. An effort has been made to choose the best search result offered by each website, which is more accurate than taking the top result.
 
-The game found by each website is included in the output so you know whether the score displayed is for the game you're looking for.
+The movie found by each website is included in the output so you know whether the score displayed is for the movie you're looking for.
 
 ### Format Differences
 
