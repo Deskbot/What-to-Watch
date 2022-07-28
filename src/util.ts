@@ -1,41 +1,41 @@
-import { fail } from "assert";
+import { fail } from "assert"
 
 export function average(arr: number[]): number {
-    let total = 0;
-    const len = arr.length;
+    let total = 0
+    const len = arr.length
 
-    for (let i = 0; i < len; i++) {
-        total += arr[i];
+    for (let i = 0 i < len i++) {
+        total += arr[i]
     }
 
-    return total / len;
+    return total / len
 }
 
 export function bindUndefined<T, U>(val: T | undefined, func: (val: T) => U): U | undefined {
-    if (val === undefined) return undefined;
-    return func(val);
+    if (val === undefined) return undefined
+    return func(val)
 }
 
 export function bug(): never {
-    fail("bug");
+    fail("bug")
 }
 
 export function csvFriendly(s: string): string {
     // if no special characters, it's fine as is
     if (!s.includes(",") && !s.includes("\n") && !s.includes('"')) {
-        return s;
+        return s
     }
 
     // special characters are only allowed inside double quotes
 
-    s = escapeDoubleQuotes(s, '""');
+    s = escapeDoubleQuotes(s, '""')
 
-    return `"${s}"`;
+    return `"${s}"`
 }
 
-const allDoubleQuotes = /"/g;
+const allDoubleQuotes = /"/g
 export function escapeDoubleQuotes(s: string, replacement: string): string {
-    return s.replace(allDoubleQuotes, replacement);
+    return s.replace(allDoubleQuotes, replacement)
 }
 
 /**
@@ -47,32 +47,32 @@ export function limitConcurrent<A extends any[], R>(
     num: number,
     func: (...args: A) => Promise<R>,
 ): (...args: A) => Promise<R> {
-    let concurrent = 0;
-    const waiting = [] as Array<() => Promise<void>>;
+    let concurrent = 0
+    const waiting = [] as Array<() => Promise<void>>
 
     const call = (...args: A) => {
-        concurrent += 1;
-        const prom = func(...args);
+        concurrent += 1
+        const prom = func(...args)
         prom.finally(() => {
-            concurrent -= 1;
-            next();
-        });
-        return prom;
-    };
+            concurrent -= 1
+            next()
+        })
+        return prom
+    }
 
     const next = () => {
         if (concurrent < num) {
-            const nextFunc = waiting.shift();
-            if (nextFunc === undefined) return;
-            nextFunc();
+            const nextFunc = waiting.shift()
+            if (nextFunc === undefined) return
+            nextFunc()
         }
-    };
+    }
 
     const limitedFunc = (...args: A) => {
 
         // call the function immediately
         if (concurrent < num) {
-            return call(...args);
+            return call(...args)
         }
 
         // delay calling the function
@@ -83,34 +83,34 @@ export function limitConcurrent<A extends any[], R>(
         return new Promise<R>((resolve, reject) => {
             const funcForLater = async () => {
                 try {
-                    resolve(await call(...args));
+                    resolve(await call(...args))
                 } catch (err) {
-                    reject(err);
+                    reject(err)
                 }
-            };
+            }
 
-            waiting.push(funcForLater);
-        });
-    };
+            waiting.push(funcForLater)
+        })
+    }
 
-    return limitedFunc;
+    return limitedFunc
 }
 
 export function nonNaN<T>(num: number, fallback: T): number | T {
     if (Number.isNaN(num)) {
-        return fallback;
+        return fallback
     } else {
-        return num;
+        return num
     }
 }
 
 export function printable(val: string | number | undefined): string {
-    if (val === undefined) return "";
-    return val.toString();
+    if (val === undefined) return ""
+    return val.toString()
 }
 
 export type RecursivePartial<T> = {
     [K in keyof T]?: T[K] extends (infer U)[]
         ? RecursivePartial<U>[]
         : RecursivePartial<T[K]>
-};
+}

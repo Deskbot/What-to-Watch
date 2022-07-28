@@ -1,128 +1,128 @@
-import * as fs from "fs";
-import * as minimist from "minimist";
-import * as process from "process";
-import * as readline from "readline";
-import { csvHeaderRow, getCsv, getJson } from "./output";
-import { limitConcurrent } from "./util";
-import { stdout } from "process";
+import * as fs from "fs"
+import * as minimist from "minimist"
+import * as process from "process"
+import * as readline from "readline"
+import { csvHeaderRow, getCsv, getJson } from "./output"
+import { limitConcurrent } from "./util"
+import { stdout } from "process"
 
 try {
-    main();
+    main()
 } catch (err) {
-    console.error(err);
-    process.exit(1);
+    console.error(err)
+    process.exit(1)
 }
 
 function main() {
-    const args = minimist(process.argv.slice(2));
+    const args = minimist(process.argv.slice(2))
 
     if (args["h"] || args["help"]) {
-        return printHelp();
+        return printHelp()
     }
 
     if (args["readme"]) {
-        return printReadme();
+        return printReadme()
     }
 
-    const csv = !args["json"]; // default to CSV
+    const csv = !args["json"] // default to CSV
 
     // choose where to take the input from
-    const file = args._[0] as string | undefined; // first arg
+    const file = args._[0] as string | undefined // first arg
     const input = readline.createInterface(
         file
             ? fs.createReadStream(file)
             : process.stdin
-    );
+    )
 
-    const rateLimit = parseInt(args["rate-limit"]) || 5;
+    const rateLimit = parseInt(args["rate-limit"]) || 5
     const getMovieData = limitConcurrent(
         rateLimit,
         csv
             ? getCsv
             : getJson
-    );
+    )
 
     // generate and write out the result
     if (csv) {
-        writeCsv(input, getMovieData);
+        writeCsv(input, getMovieData)
     } else {
-        writeJson(input, getMovieData);
+        writeJson(input, getMovieData)
     }
 }
 
 function printHelp() {
-    console.log("Usage: command (file path)? (arguments)*");
-    console.log("");
-    console.log("If a file is given, the file will be used as input, otherwise stdin is used.");
-    console.log("");
-    console.log("Input format: movie titles on separate lines");
-    console.log("");
-    console.log("Arguments:");
-    console.log("-h | --help      : Print help.");
-    console.log("--readme         : Print the readme.");
-    console.log("-p | --platforms : A comma separated list of platforms. On Metacritic where the score differs by platform, the best score is chosen. (default: all platforms)");
-    console.log("-c | --country   : A 2-character country code, used by Steam to tailor results. (default: US)");
-    console.log("--json           : Output in JSON format (instead of CSV).");
-    console.log("--rate-limit     : Set the maximum number of movies that can be queried simultaneously. If set too high, queries will be rejected by the websites queried. (default: 5)");
+    console.log("Usage: command (file path)? (arguments)*")
+    console.log("")
+    console.log("If a file is given, the file will be used as input, otherwise stdin is used.")
+    console.log("")
+    console.log("Input format: movie titles on separate lines")
+    console.log("")
+    console.log("Arguments:")
+    console.log("-h | --help      : Print help.")
+    console.log("--readme         : Print the readme.")
+    console.log("-p | --platforms : A comma separated list of platforms. On Metacritic where the score differs by platform, the best score is chosen. (default: all platforms)")
+    console.log("-c | --country   : A 2-character country code, used by Steam to tailor results. (default: US)")
+    console.log("--json           : Output in JSON format (instead of CSV).")
+    console.log("--rate-limit     : Set the maximum number of movies that can be queried simultaneously. If set too high, queries will be rejected by the websites queried. (default: 5)")
 }
 
 function printReadme() {
     fs.createReadStream(__dirname + "/../README.md")
-        .pipe(process.stdout);
+        .pipe(process.stdout)
 }
 
 function validateCountry(country: string): string {
-    country = country.toUpperCase();
+    country = country.toUpperCase()
     if (country.match(/^[A-Z]{2}$/)) {
-        return country;
+        return country
     }
 
-    console.error("Invalid country code given. A two-character country code was required.");
-    process.exit(1);
+    console.error("Invalid country code given. A two-character country code was required.")
+    process.exit(1)
 }
 
 function writeCsv(input: readline.Interface, getMovieInfo: (movie: string) => Promise<string>) {
     // write headers
-    console.log(csvHeaderRow);
+    console.log(csvHeaderRow)
 
     // write main rows
     input.on("line", movie => {
-        movie = movie.trim();
-        if (movie.length === 0) return undefined;
+        movie = movie.trim()
+        if (movie.length === 0) return undefined
 
-        getMovieInfo(movie).then(console.log);
-    });
+        getMovieInfo(movie).then(console.log)
+    })
 }
 
 function writeJson(input: readline.Interface, getMovieInfo: (movie: string) => Promise<string>) {
-    stdout.write("[");
+    stdout.write("[")
 
-    const lines = [] as Promise<void>[];
-    let firstLine = true;
+    const lines = [] as Promise<void>[]
+    let firstLine = true
 
     // write out one object at a time
     input.on("line", movie => {
-        movie = movie.trim();
-        if (movie.length === 0) return;
+        movie = movie.trim()
+        if (movie.length === 0) return
 
         const writeResult = async () => {
-            const obj = await getMovieInfo(movie);
+            const obj = await getMovieInfo(movie)
 
             // should be a comma before each object except the first
             if (!firstLine) {
-                stdout.write(",");
-                firstLine = false;
+                stdout.write(",")
+                firstLine = false
             }
 
-            stdout.write(obj);
-        };
+            stdout.write(obj)
+        }
 
-        lines.push(writeResult());
-    });
+        lines.push(writeResult())
+    })
 
     input.on("close", async () => {
         // ensure that the closing brace comes last
-        await Promise.all(lines);
-        stdout.write("]");
-    });
+        await Promise.all(lines)
+        stdout.write("]")
+    })
 }
