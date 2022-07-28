@@ -1,5 +1,5 @@
 import { getMetacriticData, MetacriticResult } from "./metacritic"
-import { csvFriendly, printable } from "./util"
+import { average, csvFriendly, printable } from "./util"
 
 export interface AllData {
     movie: string
@@ -23,12 +23,12 @@ export const csvHeaderRow = csvHeaders.join(",")
 
 export type CsvHeaders = typeof csvHeaders[number]
 
-export function aggregateScore(): number | undefined {
-    // let scores = [] as number[]
+export function aggregateScore(metacriticData: MetacriticResult | undefined): number | undefined {
+    const scores = [] as number[]
 
     // const gog_score = gogData?.score
-    // const metacritic_metascore = metacriticData?.metascore
-    // const metacritic_userscore = metacriticData?.userscore
+    const metacritic_metascore = metacriticData?.metascore
+    const metacritic_userscore = metacriticData?.userscore
     // const steam_allTimeScore = steamResult?.allTimeScore
     // const steam_recentScore = steamResult?.recentScore
 
@@ -36,12 +36,12 @@ export function aggregateScore(): number | undefined {
     // if (gog_score !== undefined) {
     //     scores.push(gog_score * 20)
     // }
-    // if (metacritic_metascore !== undefined) {
-    //     scores.push(metacritic_metascore)
-    // }
-    // if (metacritic_userscore !== undefined) {
-    //     scores.push(metacritic_userscore * 10)
-    // }
+    if (typeof metacritic_metascore === "number") {
+        scores.push(metacritic_metascore)
+    }
+    if (typeof metacritic_userscore === "number") {
+        scores.push(metacritic_userscore * 10)
+    }
     // if (steam_allTimeScore !== undefined) {
     //     scores.push(steam_allTimeScore)
     // }
@@ -49,12 +49,11 @@ export function aggregateScore(): number | undefined {
     //     scores.push(steam_recentScore)
     // }
 
-    // if (scores.length === 0) {
-    //     return undefined
-    // }
+    if (scores.length === 0) {
+        return undefined
+    }
 
-    // return parseFloat(average(scores).toFixed(1))
-    return 0
+    return parseFloat(average(scores).toFixed(1))
 }
 
 const aggregateScoreFormula = (function(): string {
@@ -99,8 +98,6 @@ const aggregateScoreFormula = (function(): string {
 
 /**
  * @param movie Movie to get data for
- * @param platforms An array of platforms to consider Metacritic reviews for
- * @param country 2-character country code defined by "ISO 3166-1 alpha-2", used by Steam
  */
 export async function getCsv(movie: string): Promise<string> {
     const buffer = [] as string[]
@@ -130,8 +127,6 @@ export async function getCsv(movie: string): Promise<string> {
 
 /**
  * @param movie Movie to get data for
- * @param platforms An array of platforms to consider Metacritic reviews for
- * @param country 2-character country code defined by "ISO 3166-1 alpha-2", used by Steam
  */
 export async function getData(movie: string): Promise<AllData> {
     const handleError = (err: unknown, website: string) => {
@@ -152,7 +147,7 @@ export async function getData(movie: string): Promise<AllData> {
 
     return {
         movie,
-        aggregateScore: 0, // aggregateScore(gogData, metacriticData, steamData),
+        aggregateScore: aggregateScore(metacriticData),
         // gog: gogData,
         metacritic: metacriticData,
         // steam: steamData,
@@ -162,8 +157,6 @@ export async function getData(movie: string): Promise<AllData> {
 
 /**
  * @param movie Movie to get data for
- * @param platforms An array of platforms to consider Metacritic reviews for
- * @param country 2-character country code defined by "ISO 3166-1 alpha-2", used by Steam
  */
 export async function getJson(movie: string): Promise<string> {
     return JSON.stringify(await getData(movie))
