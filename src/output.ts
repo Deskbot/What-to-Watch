@@ -21,7 +21,7 @@ export const csvHeaders = [
     "IMDB Score",
     "Rotten Tomatoes Name",
     "Rotten Tomatoes Critic Score",
-    "Rotten Tomatoes User Score",
+    "Rotten Tomatoes Audience Score",
 ] as const
 export const csvHeaderRow = csvHeaders.join(",")
 
@@ -120,9 +120,9 @@ export async function getCsv(movie: string): Promise<string> {
         "Metacritic User Score": data.metacritic?.userscore,
         "IMDB Name": data.imdb?.name,
         "IMDB Score": data.imdb?.score,
-        "Rotten Tomatoes Name": 0,
-        "Rotten Tomatoes Critic Score": 0,
-        "Rotten Tomatoes User Score": 0,
+        "Rotten Tomatoes Name": data.rottentomatoes?.name,
+        "Rotten Tomatoes Critic Score": data.rottentomatoes?.criticScore,
+        "Rotten Tomatoes Audience Score": data.rottentomatoes?.audienceScore,
     }
 
     // iterate through in the same order every time guaranteed
