@@ -1,5 +1,6 @@
 import { getImdbData, ImdbResult } from "./imdb"
 import { getMetacriticData, MetacriticResult } from "./metacritic"
+import { getRottenTomatoesData, RottenTomatoesResult } from "./rottentomatoes"
 import { average, csvFriendly, printable } from "./util"
 
 export interface AllData {
@@ -7,6 +8,7 @@ export interface AllData {
     aggregateScore?: number
     imdb?: ImdbResult
     metacritic?: MetacriticResult
+    rottentomatoes?: RottenTomatoesResult
 }
 
 export const csvHeaders = [
@@ -28,16 +30,17 @@ export type CsvHeaders = typeof csvHeaders[number]
 export function aggregateScore(
     metacriticData: MetacriticResult | undefined,
     imdbData: ImdbResult | undefined,
+    rottenTomatoesData: RottenTomatoesResult | undefined,
 ): number | undefined {
     const scores = [] as number[]
 
     const imdb_score = imdbData?.score
     const metacritic_metascore = metacriticData?.metascore
     const metacritic_userscore = metacriticData?.userscore
-    // const steam_allTimeScore = steamResult?.allTimeScore
-    // const steam_recentScore = steamResult?.recentScore
+    const rottentomatoes_audienceScore = rottenTomatoesData?.audienceScore
+    const rottentomatoes_criticScore = rottenTomatoesData?.criticScore
 
-    // // make all scores out of 100
+    // make all scores out of 100
     if (typeof imdb_score === "number") {
         scores.push(imdb_score * 10)
     }
@@ -47,12 +50,12 @@ export function aggregateScore(
     if (typeof metacritic_userscore === "number") {
         scores.push(metacritic_userscore * 10)
     }
-    // if (steam_allTimeScore !== undefined) {
-    //     scores.push(steam_allTimeScore)
-    // }
-    // if (steam_recentScore !== undefined) {
-    //     scores.push(steam_recentScore)
-    // }
+    if (typeof rottentomatoes_audienceScore === "number") {
+        scores.push(rottentomatoes_audienceScore)
+    }
+    if (typeof rottentomatoes_criticScore === "number") {
+        scores.push(rottentomatoes_criticScore)
+    }
 
     if (scores.length === 0) {
         return undefined
@@ -140,23 +143,21 @@ export async function getData(movie: string): Promise<AllData> {
         return undefined
     }
 
-    const imdbDataProm =       getImdbData(movie)      .catch(err => handleError(err, "IMDB"))
-    const metacriticDataProm = getMetacriticData(movie).catch(err => handleError(err, "Metacritic"))
-    // const steamDataProm =      steam.getData(movie)     .catch(err => handleError(err, "Steam"))
-    // const hltbDataProm =       hltb.getData(movie)      .catch(err => handleError(err, "How Long to Beat"))
+    const imdbDataProm =           getImdbData(movie)          .catch(err => handleError(err, "IMDB"))
+    const metacriticDataProm =     getMetacriticData(movie)    .catch(err => handleError(err, "Metacritic"))
+    const rottentomatoesDataProm = getRottenTomatoesData(movie).catch(err => handleError(err, "Rotten Tomatoes"))
 
     // spawn all promises before blocking on their results
     const imdbData = await imdbDataProm
     const metacriticData = await metacriticDataProm
-    // const steamData = await steamDataProm
+    const rottentomatoesData = await rottentomatoesDataProm
 
     return {
         movie,
-        aggregateScore: aggregateScore(metacriticData, imdbData),
+        aggregateScore: aggregateScore(metacriticData, imdbData, rottentomatoesData),
         imdb: imdbData,
         metacritic: metacriticData,
-        // steam: steamData,
-        // hltb: await hltbDataProm,
+        rottentomatoes: rottentomatoesData,
     }
 }
 
