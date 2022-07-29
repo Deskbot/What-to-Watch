@@ -17,11 +17,11 @@ type RottenTomatoesSearchResult = {
         items: Array<{
             name: string
             url: string
-            tomatoMeterScore: {
-                score: string
-            }
             audienceScore: {
                 score: string
+            }
+            criticsScore: {
+                value: number
             }
         }>
     }
@@ -31,7 +31,11 @@ export async function getRottenTomatoesData(movie: string): Promise<RottenTomato
     const movieStr = querystring.escape(movie)
     const searchUrl = `https://www.rottentomatoes.com/napi/search/all?searchQuery=${movieStr}&type=movie`
 
-    const searchResponseText = await fetch(searchUrl).then(res => res.text())
+    // make the website like us
+    const userAgent = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:103.0) Gecko/20100101 Firefox/103.0"
+
+    const searchResponseText = await fetch(searchUrl, { headers: { "User-Agent": userAgent }})
+        .then(res => res.text())
     const searchResponse = JSON.parse(searchResponseText) as RottenTomatoesSearchResult
 
     const targetResult = closestSearchResult(movie, searchResponse.movie.items, item => item.name)
@@ -39,10 +43,7 @@ export async function getRottenTomatoesData(movie: string): Promise<RottenTomato
         return undefined
     }
 
-    const criticScore = parseInt(targetResult.tomatoMeterScore.score)
-    if (Number.isNaN(criticScore)) {
-        bug()
-    }
+    const criticScore = targetResult.criticsScore.value
 
     const audienceScore = parseInt(targetResult.audienceScore.score)
     if (Number.isNaN(audienceScore)) {
