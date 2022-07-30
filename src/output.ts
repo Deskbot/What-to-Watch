@@ -1,6 +1,7 @@
 import { getImdbData, ImdbResult } from "./imdb"
 import { getMetacriticData, MetacriticResult } from "./metacritic"
 import { getRottenTomatoesData, RottenTomatoesResult } from "./rottentomatoes"
+import { count, getCellInCol } from "./spreadsheet"
 import { average, csvFriendly, printable } from "./util"
 
 export interface AllData {
@@ -67,42 +68,56 @@ export function aggregateScore(
 const aggregateScoreFormula = (function(): string {
     // get cell references
 
-    // const gog_score = csvHeaders.indexOf("GOG Score") + 1
-    // const metacritic_metascore = csvHeaders.indexOf("Metacritic Critic Score") + 1
-    // const metacritic_userscore = csvHeaders.indexOf("Metacritic User Score") + 1
-    // const steam_allTimeScore = csvHeaders.indexOf("Steam All Time % Positive") + 1
-    // const steam_recentScore = csvHeaders.indexOf("Steam Recent % Positive") + 1
+    const scoreColumns: CsvHeaders[] = [
+        "Metacritic Critic Score",
+        "Metacritic User Score",
+        "IMDB Score",
+        "Rotten Tomatoes Critic Score",
+        "Rotten Tomatoes Audience Score",
+    ]
 
-    // const gog_score_cell = getCellInCol(gog_score)
-    // const metacritic_metascore_cell = getCellInCol(metacritic_metascore)
-    // const metacritic_userscore_cell = getCellInCol(metacritic_userscore)
-    // const steam_allTimeScore_cell = getCellInCol(steam_allTimeScore)
-    // const steam_recentScore_cell = getCellInCol(steam_recentScore)
+    const cells = scoreColumns
+        .map(col => csvHeaders.indexOf(col) + 1)
+        .map(getCellInCol)
 
-    // const cells = [
-    //     gog_score_cell,
-    //     metacritic_metascore_cell,
-    //     metacritic_userscore_cell,
-    //     steam_allTimeScore_cell,
-    //     steam_recentScore_cell,
-    // ]
+    // get a list of expressions to average
 
-    // // normalise the scores to be out of 100
-    // const scoreExpressions = [
-    //     `(${gog_score_cell} * 20)`,
-    //     `(${metacritic_metascore_cell})`,
-    //     `(${metacritic_userscore_cell} * 10)`,
-    //     `(${steam_allTimeScore_cell})`,
-    //     `(${steam_recentScore_cell})`,
-    // ]
+    const scoreExpressions: string[] = []
 
-    // // average the scores, ensure blank cells don't contribute to the average
-    // const average = `(${scoreExpressions.join(" + ")}) / ${count(cells)}`
+    for (const col of scoreColumns) {
+        const score = csvHeaders.indexOf(col) + 1
+        const cell = getCellInCol(score)
 
-    // return `=IFERROR(${average}, "")`
+        // normalise the scores to be out of 100
+        const multiplier = normalisationMultiplier(col)
 
-    return ""
+        const expression = multiplier === 1
+            ? cell
+            : `(${cell} * ${multiplier})`
+
+        scoreExpressions.push(expression)
+    }
+
+    // average the scores, ensure blank cells don't contribute to the average
+    const average = `(${scoreExpressions.join(" + ")}) / ${count(cells)}`
+
+    return `=IFERROR(${average}, "")`
 })()
+
+function normalisationMultiplier(col: CsvHeaders): number {
+    switch (col) {
+        case "IMDB Score":
+        case "Metacritic User Score":
+            return 10
+
+        case "Metacritic Critic Score":
+        case "Rotten Tomatoes Audience Score":
+        case "Rotten Tomatoes Critic Score":
+            return 1
+    }
+
+    return 1
+}
 
 /**
  * @param movie Movie to get data for
