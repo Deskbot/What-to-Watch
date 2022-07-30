@@ -1,2 +1,1 @@
-* delete commented out code
 * can I search by year, some films have the same name e.g. "drive"

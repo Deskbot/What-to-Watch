@@ -1,7 +1,7 @@
 import { getImdbData, ImdbResult } from "./imdb"
 import { getMetacriticData, MetacriticResult } from "./metacritic"
 import { getRottenTomatoesData, RottenTomatoesResult } from "./rottentomatoes"
-import { count, getCellInCol } from "./spreadsheet"
+import { count, getCellInCol, toHyperlink } from "./spreadsheet"
 import { average, csvFriendly, printable } from "./util"
 
 export interface AllData {
@@ -128,15 +128,15 @@ export async function getCsv(movie: string): Promise<string> {
     const data = await getData(movie)
 
     const newData: Record<CsvHeaders, string | number | undefined> = {
-        "Movie": data.movie,
-        "Aggregate Score": aggregateScoreFormula,
-        "Metacritic Name": data.metacritic?.name,
-        "Metacritic Critic Score": data.metacritic?.metascore,
-        "Metacritic User Score": data.metacritic?.userscore,
-        "IMDB Name": data.imdb?.name,
-        "IMDB Score": data.imdb?.score,
-        "Rotten Tomatoes Name": data.rottentomatoes?.name,
-        "Rotten Tomatoes Critic Score": data.rottentomatoes?.criticScore,
+        "Movie":                          data.movie,
+        "Aggregate Score":                aggregateScoreFormula,
+        "Metacritic Name":                data.metacritic ? toHyperlink(data.metacritic.url, data.metacritic.name) : undefined,
+        "Metacritic Critic Score":        data.metacritic?.metascore,
+        "Metacritic User Score":          data.metacritic?.userscore,
+        "IMDB Name":                      data.imdb ? toHyperlink(data.imdb.url, data.imdb.name) : undefined,
+        "IMDB Score":                     data.imdb?.score,
+        "Rotten Tomatoes Name":           data.rottentomatoes ? toHyperlink(data.rottentomatoes.url, data.rottentomatoes.name) : undefined,
+        "Rotten Tomatoes Critic Score":   data.rottentomatoes?.criticScore,
         "Rotten Tomatoes Audience Score": data.rottentomatoes?.audienceScore,
     }
 
