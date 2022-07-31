@@ -1,1 +1,1 @@
-* some failures when running on sample input
+* tailor the rate limiting
