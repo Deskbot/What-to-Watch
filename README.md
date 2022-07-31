@@ -73,7 +73,7 @@ Arguments:
 -h | --help      : Print help.
 --readme         : Print the readme.
 --json           : Output in JSON format (instead of CSV).
---rate-limit     : Set the maximum number of movies that can be queried simultaneously. If set too high, queries will be rejected by the websites queried. (defaults to 5)
+--rate-limit     : Set the maximum number of movies that can be queried simultaneously. If set too high, queries will be rejected by the websites queried. (defaults to 3)
 ```
 
 e.g. `what-to-watch list_of_movies.txt --json`
