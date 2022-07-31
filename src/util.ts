@@ -69,6 +69,23 @@ export function getHighest<T>(arr: readonly T[], comparator: (t1: T, t2: T) => n
     return highest
 }
 
+export async function lazyMap<K, V>(keys: readonly K[], mapper: (key: K) => Promise<V | undefined>): Promise<Map<K, V>> {
+    const map = new Map<K, V>()
+    const promises: Promise<void>[] = []
+
+    for (const key of keys) {
+        promises.push(mapper(key).then(val => {
+            if (val !== undefined) {
+                map.set(key, val)
+            }
+        }))
+    }
+
+    await Promise.all(promises)
+
+    return map
+}
+
 /**
  * @param num Number of calls to the given function that can be spawned
  *            (i.e. waiting to resolve) at once.

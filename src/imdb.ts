@@ -2,7 +2,7 @@ import * as cheerio from "cheerio"
 import fetch from "node-fetch"
 import * as querystring from "querystring"
 import { closestSearchResult } from "./search"
-import { asyncFilter, bug, getHighest } from "./util"
+import { asyncFilter, bug, getHighest, lazyMap } from "./util"
 
 export type ImdbScore = number | "not found"
 
@@ -34,29 +34,30 @@ async function search(movie: string): Promise<SearchResult | undefined> {
 
     const searchResults = getResultsFromSearchPage(searchPage)
 
+    // find best string match
     const bestResults = closestSearchResult(
         movie,
         searchResults.filter(result => result.getIsReleased()),
         result => result.getName(),
     )
 
-    const scores = new Map<SearchResult, number>()
-    const scorePromises: Promise<void>[] = []
+    // get scores outside of promises
+    const searchResultScores = await lazyMap(bestResults, async (searchResult) => {
+        const score = await searchResult.getScore()
+        if (score !== "not found") {
+            return score
+        }
 
-    for (const result of bestResults) {
-        scorePromises.push(result.getScore().then((score) => {
-            if (score !== "not found") {
-                scores.set(result, score)
-            }
-        }))
-    }
+        return undefined
+    })
 
-    await Promise.all(scorePromises)
+    // when there are several equally good matches (e.g. films with the same name),
+    // output the one with the best score
 
     let bestScore: ImdbScore | undefined = undefined
     let bestResult: SearchResult | undefined
 
-    for (const [result, score] of scores) {
+    for (const [result, score] of searchResultScores) {
         if (bestScore === undefined || score > bestScore) {
             bestResult = result
             bestScore = score
