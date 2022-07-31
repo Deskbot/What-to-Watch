@@ -33,28 +33,28 @@ If you're a non-technical person looking at this, I'm sorry. This code won't run
 Run without install:
 
 ```
-npx what-to-play ...
+npx what-to-watch ...
 ```
 
 Global install:
 
 ```
-sudo npm install --global what-to-play
-what-to-play ...
+sudo npm install --global what-to-watch
+what-to-watch ...
 ```
 
 Dependency:
 
 ```
-npm install what-to-play
-npx what-to-play ...
+npm install what-to-watch
+npx what-to-watch ...
 ```
 
 From source:
 
 ```
-git clone https://github.com/Deskbot/What-to-Play --depth 1
-cd What-to-Play
+git clone https://github.com/Deskbot/what-to-watch --depth 1
+cd what-to-watch
 npm install
 npm run build
 npm run main -- ...
@@ -72,15 +72,11 @@ Input format: movie titles on separate lines
 Arguments:
 -h | --help      : Print help.
 --readme         : Print the readme.
--p | --platforms : A comma separated list of platforms. On Metacritic where the score differs by platform, the best score is chosen. (default: all platforms)
--c | --country   : A 2-character country code, used by Steam to tailor results. (default: US)
 --json           : Output in JSON format (instead of CSV).
 --rate-limit     : Set the maximum number of movies that can be queried simultaneously. If set too high, queries will be rejected by the websites queried. (defaults to 5)
 ```
 
-e.g. `what-to-play list_of_movies.txt --json --platforms ps5,playstation4,switch,xbox series x,pc`
-
-Platform strings are parsed forgivingly.
+e.g. `what-to-watch list_of_movies.txt --json`
 
 ## Library Usage
 
@@ -106,26 +102,25 @@ For various reasons, a movie or score might not be found from the website. As a 
 
 ### Understanding the Numbers
 
-Number                 | Maximum | Unit  | Measure of
------------------------|---------|-------|------------
-GOG rating             |   5     |       | Mean user-submitted rating
-Metacritic Metascore   | 100     |       | Movie Critic review scores put through some formula
-Metacritic user score  |  10     |       | Presumably the mean user-submitted rating
-Steam rating           | 100     | %     | Percent of users who gave a positive review
-Aggregate score        | 100     |       | Mean of all other score fields, each normalised to be out of 100. Each score is weighted equally. If the score isn't present, it doesn't contribute to the average.
-How Long to Beat times |   ∞     | hours | Time
+| Number                         | Maximum |
+| ------------------------------ | ------- |
+| Metacritic Critic Score        | 100     |
+| Metacritic User Score          | 10      |
+| IMDB Score                     | 10      |
+| Rotten Tomatoes Critic Score   | 100     |
+| Rotten Tomatoes Audience Score | 100     |
 
 The aggregate score exists so that there will be a score column filled in for every row for ease of sorting. However, doing this will skew movies that exist on Steam further to the top because Steam's review system means it yields scores closer to 100.
-
-### Release Dates
-
-These will vary by release platform. The data provided is to give a rough idea. These dates aren't straightforward to sort because the dates themselves have no consistent format. Sometimes a long time period is specified instead of a specific date.
 
 ### Shortcomings
 
 Movies with similar names could be confused for one another. An effort has been made to choose the best search result offered by each website, which is more accurate than taking the top result.
 
 The movie found by each website is included in the output so you know whether the score displayed is for the movie you're looking for.
+
+When there are multiple equally good matches, it is assumed that you are searching for the best one.
+
+There are often multiple movies with the same name released in different years. If you include the year at the end of your input, it will be factored into the results.
 
 ### Format Differences
 
