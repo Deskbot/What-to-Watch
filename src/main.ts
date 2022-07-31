@@ -33,15 +33,11 @@ function main() {
             : process.stdin
     )
 
-    const getMovieData = csv
-        ? getCsv
-        : getJson
-
     // generate and write out the result
     if (csv) {
-        writeCsv(input, getMovieData)
+        writeCsv(input, getCsv)
     } else {
-        writeJson(input, getMovieData)
+        writeJson(input, getJson)
     }
 }
 
