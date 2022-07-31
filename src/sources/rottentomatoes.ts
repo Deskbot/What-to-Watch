@@ -15,20 +15,22 @@ export type RottenTomatoesResult = {
     audienceScore: RottenTomatoesScore
 }
 
-type RottenTomatoesSearchResult = {
+type SearchResults = {
     movie: {
-        items: Array<{
-            name: string
-            url: string
-            audienceScore: {
-                score: string
-            }
-            criticsScore: {
-                value: number | null
-            }
-            releaseYear: string
-        }>
+        items: SearchedMovie[]
     }
+}
+
+type SearchedMovie = {
+    name: string
+    url: string
+    audienceScore: {
+        score: string
+    }
+    criticsScore: {
+        value: number | null
+    }
+    releaseYear: string
 }
 
 export async function getRottenTomatoesData(movie: string): Promise<RottenTomatoesResult | undefined> {
@@ -40,7 +42,7 @@ export async function getRottenTomatoesData(movie: string): Promise<RottenTomato
 
     const searchResponseText = await rottenTomatoesFetch(searchUrl, { headers: { "User-Agent": userAgent }})
         .then(res => res.text())
-    const searchResponse = JSON.parse(searchResponseText) as RottenTomatoesSearchResult
+    const searchResponse = JSON.parse(searchResponseText) as SearchResults
 
     // add the year to the item name
     for (const item of searchResponse.movie.items) {
@@ -53,31 +55,29 @@ export async function getRottenTomatoesData(movie: string): Promise<RottenTomato
         return undefined
     }
 
-    const targetResult = targetResults.length === 1
-        ? targetResults[0]
-        // if there are multiple equally good matches, choose the highest critic scoring one
-        // can't do this with 1 match in case we filter out the only result
-        : getHighest(
-            targetResults.filter(result => result.criticsScore.value !== null),
-            (result1, result2) => (result1.criticsScore.value as number) - (result2.criticsScore.value as number)
-        )
+    const targetResult = getHighest(
+        targetResults,
+        (result1, result2) => (result1.criticsScore.value ?? -1) - (result2.criticsScore.value ?? -1)
+    )
 
     if (targetResult === undefined) {
         return undefined
     }
 
-    // get scores
+    return convertSearchData(targetResult)
+}
 
-    const criticScore = targetResult.criticsScore.value
+function convertSearchData(data: SearchedMovie): RottenTomatoesResult {
+    const criticScore = data.criticsScore.value
 
-    const audienceScore = parseInt(targetResult.audienceScore.score)
+    const audienceScore = parseInt(data.audienceScore.score)
     if (Number.isNaN(audienceScore)) {
         bug()
     }
 
     return {
-        name: targetResult.name,
-        url: targetResult.url,
+        name: data.name,
+        url: data.url,
         criticScore: criticScore ?? "not found",
         audienceScore,
     }
