@@ -53,13 +53,17 @@ async function search(movie: string): Promise<SearchResult | undefined> {
 
     await Promise.all(scorePromises)
 
-    const bestScore = getHighest([...scores.values()], (s1, s2) => s1 - s2)
+    let bestScore: ImdbScore | undefined = undefined
+    let bestResult: SearchResult | undefined
 
-    const resultsWithBestScore = [...scores.entries()]
-        .filter(([_, score]) => score === bestScore)
-        .map(([result,_]) => result)
+    for (const [result, score] of scores) {
+        if (bestScore === undefined || score > bestScore) {
+            bestResult = result
+            bestScore = score
+        }
+    }
 
-    return getHighest(resultsWithBestScore, (result1, result2) => result1.getYear() - result2.getYear())
+    return bestResult
 }
 
 function getResultsFromSearchPage(searchPage: cheerio.Root): SearchResult[] {
