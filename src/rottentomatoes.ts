@@ -44,15 +44,13 @@ export async function getRottenTomatoesData(movie: string): Promise<RottenTomato
         item.name = `${item.name} (${item.releaseYear})`
     }
 
-    const targetResult = closestSearchResult(
-        movie,
-        searchResponse.movie.items,
-        item => item.name,
-    )
-
+    // find best match
+    const targetResult = closestSearchResult(movie, searchResponse.movie.items, item => item.name)
     if (targetResult === undefined) {
         return undefined
     }
+
+    // get scores
 
     const criticScore = targetResult.criticsScore.value
 
