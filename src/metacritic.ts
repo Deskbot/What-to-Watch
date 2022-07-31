@@ -1,8 +1,8 @@
 import * as cheerio from "cheerio"
 import fetch from "node-fetch"
 import * as querystring from "querystring"
-import { bug } from "./util"
 import { closestSearchResult } from "./search"
+import { bug } from "./util"
 
 export type MetacriticScore = number | "tbd" | "not found"
 
@@ -17,16 +17,17 @@ export async function getMetacriticData(movie: string): Promise<MetacriticResult
     const productData = await search(movie)
     if (productData === undefined) return undefined
 
-    const { name, reviewUrl } = productData
+    const name = `${productData.name} (${productData.year})`
+    const url = productData.reviewUrl
 
-    const reviewPageText = await fetch(reviewUrl).then(res => res.text())
+    const reviewPageText = await fetch(url).then(res => res.text())
     const reviewPage = cheerio.load(reviewPageText)
 
     const { metascore, userscore } = await getScores(reviewPage)
 
     return {
         name,
-        url: reviewUrl,
+        url,
         metascore,
         userscore,
     }
@@ -70,6 +71,7 @@ async function getScores(scorePage: cheerio.Root): Promise<BothScores> {
 interface TargetMovie {
     name: string
     reviewUrl: string
+    year: number
 }
 
 async function search(movie: string): Promise<TargetMovie | undefined> {
@@ -79,7 +81,7 @@ async function search(movie: string): Promise<TargetMovie | undefined> {
     const searchPageText = await fetch(searchUrl).then(res => res.text())
     const searchPage = cheerio.load(searchPageText)
 
-    const searchResults = searchPage(".main_stats").find("a")
+    const searchResults = searchPage(".main_stats")
         .toArray()
         .map(searchPage)
 
@@ -91,17 +93,25 @@ async function search(movie: string): Promise<TargetMovie | undefined> {
 
     if (!bestResult) return undefined
 
-    const name = bestResult.text().trim()
+    const link = bestResult.find(".product_title").find("a")
 
-    const href = bestResult.attr("href")
+    const name = link.text().trim()
+
+    const href = link.attr("href")
     if (!href) bug()
 
     const reviewUrl = absoluteUrl(href)
     if (!reviewUrl) bug()
 
+    const yearStr = bestResult.find("p").text().replace("Movie, ", "").trim()
+
+    const year = parseInt(yearStr)
+    if (Number.isNaN(year)) bug()
+
     return {
         name,
         reviewUrl,
+        year,
     }
 }
 
