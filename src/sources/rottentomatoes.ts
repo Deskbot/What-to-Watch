@@ -1,7 +1,10 @@
 import fetch from "node-fetch"
 import * as querystring from "querystring"
+import { getRateLimit } from "../args"
 import { closestSearchResult } from "../search"
-import { average, bug, getHighest } from "../util"
+import { bug, getHighest, limitConcurrent } from "../util"
+
+const rottenTomatoesFetch = limitConcurrent(getRateLimit(), fetch)
 
 export type RottenTomatoesScore = number | "not found"
 
@@ -35,7 +38,7 @@ export async function getRottenTomatoesData(movie: string): Promise<RottenTomato
     // make the website like us
     const userAgent = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:103.0) Gecko/20100101 Firefox/103.0"
 
-    const searchResponseText = await fetch(searchUrl, { headers: { "User-Agent": userAgent }})
+    const searchResponseText = await rottenTomatoesFetch(searchUrl, { headers: { "User-Agent": userAgent }})
         .then(res => res.text())
     const searchResponse = JSON.parse(searchResponseText) as RottenTomatoesSearchResult
 

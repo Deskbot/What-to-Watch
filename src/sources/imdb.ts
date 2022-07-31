@@ -1,8 +1,11 @@
 import * as cheerio from "cheerio"
 import fetch from "node-fetch"
 import * as querystring from "querystring"
+import { getRateLimit } from "../args"
 import { closestSearchResult } from "../search"
-import { bug, buildMapFromAsyncOptional } from "../util"
+import { bug, buildMapFromAsyncOptional, limitConcurrent } from "../util"
+
+const imdbFetch = limitConcurrent(getRateLimit(), fetch)
 
 export type ImdbScore = number | "not found"
 
@@ -29,10 +32,14 @@ async function search(movie: string): Promise<SearchResult | undefined> {
     const movieStr = querystring.escape(movie)
     const searchUrl = `https://www.imdb.com/find?q=${movieStr}&s=tt&ttype=ft`
 
-    const searchPageText = await fetch(searchUrl).then(res => res.text())
+    const searchPageText = await imdbFetch(searchUrl).then(res => res.text())
     const searchPage = cheerio.load(searchPageText)
 
-    const searchResults = getResultsFromSearchPage(searchPage)
+    const searchResults = searchPage(".article")
+        .find(".result_text")
+        .toArray()
+        .map(searchPage)
+        .map(dom => new SearchResult(dom))
 
     // find best string match
     const bestResults = closestSearchResult(
@@ -65,15 +72,6 @@ async function search(movie: string): Promise<SearchResult | undefined> {
     }
 
     return bestResult
-}
-
-function getResultsFromSearchPage(searchPage: cheerio.Root): SearchResult[] {
-    const searchResults = searchPage(".article")
-        .find(".result_text")
-        .toArray()
-        .map(searchPage)
-
-    return searchResults.map(dom => new SearchResult(dom))
 }
 
 class SearchResult {

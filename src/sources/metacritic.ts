@@ -1,8 +1,11 @@
 import * as cheerio from "cheerio"
 import fetch from "node-fetch"
 import * as querystring from "querystring"
+import { getRateLimit } from "../args"
 import { closestSearchResult } from "../search"
-import { bug, buildMapFromAsyncOptional } from "../util"
+import { bug, buildMapFromAsyncOptional, limitConcurrent } from "../util"
+
+const metacriticFetch = limitConcurrent(getRateLimit(), fetch)
 
 export type MetacriticScore = number | "tbd" | "not found"
 
@@ -75,7 +78,7 @@ async function search(movie: string): Promise<TargetMovie | undefined> {
     const movieStr = querystring.escape(movie)
     const searchUrl = `https://www.metacritic.com/search/movie/${movieStr}/results`
 
-    const searchPageText = await fetch(searchUrl).then(res => res.text())
+    const searchPageText = await metacriticFetch(searchUrl).then(res => res.text())
     const searchPage = cheerio.load(searchPageText)
 
     const searchResults = searchPage(".main_stats")
