@@ -24,7 +24,7 @@ type RottenTomatoesSearchResult = {
                 score: string
             }
             criticsScore: {
-                value: number
+                value: number | null
             }
             releaseYear: string
         }>
@@ -49,12 +49,19 @@ export async function getRottenTomatoesData(movie: string): Promise<RottenTomato
 
     // find best match
     const targetResults = closestSearchResult(movie, searchResponse.movie.items, item => item.name)
+    if (targetResults.length === 0) {
+        return undefined
+    }
 
-    // if there are multiple equally good matches, choose the highest critic scoring one
-    const targetResult = getHighest(
-        targetResults,
-        (result1, result2) => result1.criticsScore.value - result2.criticsScore.value
-    )
+    const targetResult = targetResults.length === 1
+        ? targetResults[0]
+        // if there are multiple equally good matches, choose the highest critic scoring one
+        // can't do this with 1 match in case we filter out the only result
+        : getHighest(
+            targetResults.filter(result => result.criticsScore.value !== null),
+            (result1, result2) => (result1.criticsScore.value as number) - (result2.criticsScore.value as number)
+        )
+
     if (targetResult === undefined) {
         return undefined
     }
@@ -71,7 +78,7 @@ export async function getRottenTomatoesData(movie: string): Promise<RottenTomato
     return {
         name: targetResult.name,
         url: targetResult.url,
-        criticScore,
+        criticScore: criticScore ?? "not found",
         audienceScore,
     }
 }
