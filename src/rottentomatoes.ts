@@ -23,6 +23,7 @@ type RottenTomatoesSearchResult = {
             criticsScore: {
                 value: number
             }
+            releaseYear: string
         }>
     }
 }
@@ -38,7 +39,16 @@ export async function getRottenTomatoesData(movie: string): Promise<RottenTomato
         .then(res => res.text())
     const searchResponse = JSON.parse(searchResponseText) as RottenTomatoesSearchResult
 
-    const targetResult = closestSearchResult(movie, searchResponse.movie.items, item => item.name)
+    // add the year to the item name
+    const itemsWithYearInName = searchResponse.movie.items
+        .map(item => ({ ...item, name: `${item.name} (${item.releaseYear})` }))
+
+    const targetResult = closestSearchResult(
+        movie,
+        itemsWithYearInName,
+        item => item.name,
+    )
+
     if (targetResult === undefined) {
         return undefined
     }
