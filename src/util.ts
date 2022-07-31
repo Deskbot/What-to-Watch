@@ -38,7 +38,7 @@ export function escapeDoubleQuotes(s: string, replacement: string): string {
     return s.replace(allDoubleQuotes, replacement)
 }
 
-export function getHighest<T>(arr: readonly T[], comparator: (t1: T, t2: T) => number): T | undefined{
+export function getHighest<T>(arr: readonly T[], comparator: (t1: T, t2: T) => number): T | undefined {
     if (arr.length === 0) return undefined
 
     let highest = arr[0]

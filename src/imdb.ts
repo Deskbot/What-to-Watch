@@ -49,10 +49,30 @@ async function search(movie: string): Promise<TargetMovie | undefined> {
         .toArray()
         .map(searchPage)
 
+    const getYearRegex = /^.* \(([0-9]+)\)$/ // capture group 1 is the numbers inside the parentheses
+    function getYear(elem: cheerio.Cheerio): number {
+        const name = getName(elem)
+
+        const result = getYearRegex.exec(name)
+        if (result === null) bug()
+
+        const yearStr = result[1]
+
+        const year = parseInt(yearStr)
+        if (Number.isNaN(year)) bug()
+
+        return year
+    }
+
+    function getName(elem: cheerio.Cheerio): string {
+        return elem.text().trim()
+    }
+
     const bestResult = closestSearchResult(
         movie,
         searchResults,
-        result => result.text().trim()
+        getName,
+        (movie1, movie2) => getYear(movie2) - getYear(movie1)
     )
 
     if (!bestResult) return undefined
