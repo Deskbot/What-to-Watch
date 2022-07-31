@@ -45,7 +45,7 @@ export async function getRottenTomatoesData(movie: string): Promise<RottenTomato
     }
 
     // find best match
-    const targetResult = closestSearchResult(movie, searchResponse.movie.items, item => item.name, () => 1) // TOOD tiebreak properly
+    const targetResult = closestSearchResult(movie, searchResponse.movie.items, item => item.name)[0] // TOOD tiebreak properly
     if (targetResult === undefined) {
         return undefined
     }

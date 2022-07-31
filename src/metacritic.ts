@@ -88,9 +88,8 @@ async function search(movie: string): Promise<TargetMovie | undefined> {
     const bestResult = closestSearchResult(
         movie,
         searchResults,
-        product => product.text().trim(),
-        () => 1 // TODO tiebreak properly
-    )
+        product => product.text().trim()
+    )[0] // TOOD tiebreak properly
 
     if (!bestResult) return undefined
 

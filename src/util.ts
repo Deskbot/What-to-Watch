@@ -1,5 +1,19 @@
 import { fail } from "assert"
 
+export async function asyncFilter<T>(arr: T[], filterer: (elem: T) => Promise<boolean>): Promise<T[]> {
+    const result: T[] = []
+
+    const matches = await Promise.all(arr.map(filterer))
+
+    for (let i = 0; i < matches.length; i++) {
+        if (matches[i]) {
+            result.push(arr[i])
+        }
+    }
+
+    return result
+}
+
 export function average(arr: number[]): number {
     let total = 0
     const len = arr.length

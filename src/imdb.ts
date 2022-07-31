@@ -2,7 +2,7 @@ import * as cheerio from "cheerio"
 import fetch from "node-fetch"
 import * as querystring from "querystring"
 import { closestSearchResult } from "./search"
-import { bug } from "./util"
+import { asyncFilter, bug, getHighest } from "./util"
 
 export type ImdbScore = number | "not found"
 
@@ -34,12 +34,15 @@ async function search(movie: string): Promise<SearchResult | undefined> {
 
     const searchResults = getResultsFromSearchPage(searchPage)
 
-    const bestResult = closestSearchResult(
+    const bestResults = closestSearchResult(
         movie,
         searchResults.filter(result => result.getIsReleased()),
         result => result.getName(),
-        (result1, result2) => result1.getYear() - result2.getYear()
     )
+
+    const bestResultsWithAScore = await asyncFilter(bestResults, async result => await result.getScore() !== "not found")
+
+    const bestResult = getHighest(bestResultsWithAScore, (result1, result2) => result1.getYear() - result2.getYear())
 
     return bestResult
 }

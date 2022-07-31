@@ -1,14 +1,12 @@
 import * as levenshtein from "fastest-levenshtein"
 import { LCS } from "js-lcs"
-import { getHighest } from "./util"
 
 export function closestSearchResult<T>(
     movie: string,
     products: T[],
     getName: (product: T) => string,
-    tieBreaker: (product1: T, product2: T) => number
-): T | undefined {
-    if (products.length === 0) return undefined
+): T[] {
+    if (products.length === 0) return []
 
     const movieSanitised = sanitise(movie)
 
@@ -53,10 +51,10 @@ export function closestSearchResult<T>(
     }
 
     if (bestMatches.length === 0) {
-        return undefined
+        return []
     }
 
-    return getHighest(bestMatches, tieBreaker)
+    return bestMatches
 }
 
 const nonAlphanumeric = /[^a-z0-9\(\)]/g
