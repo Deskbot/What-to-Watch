@@ -1,6 +1,6 @@
-import { getImdbData, ImdbResult } from "./imdb"
-import { getMetacriticData, MetacriticResult } from "./metacritic"
-import { getRottenTomatoesData, RottenTomatoesResult } from "./rottentomatoes"
+import { getImdbData, ImdbResult } from "./sources/imdb"
+import { getMetacriticData, MetacriticResult } from "./sources/metacritic"
+import { getRottenTomatoesData, RottenTomatoesResult } from "./sources/rottentomatoes"
 import { count, getCellInCol, toHyperlink } from "./spreadsheet"
 import { average, csvFriendly, printable } from "./util"
 

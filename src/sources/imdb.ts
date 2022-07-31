@@ -1,8 +1,8 @@
 import * as cheerio from "cheerio"
 import fetch from "node-fetch"
 import * as querystring from "querystring"
-import { closestSearchResult } from "./search"
-import { asyncFilter, bug, getHighest, lazyMap } from "./util"
+import { closestSearchResult } from "../search"
+import { bug, lazyMap } from "../util"
 
 export type ImdbScore = number | "not found"
 

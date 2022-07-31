@@ -1,8 +1,8 @@
 import * as cheerio from "cheerio"
 import fetch from "node-fetch"
 import * as querystring from "querystring"
-import { closestSearchResult } from "./search"
-import { bug } from "./util"
+import { closestSearchResult } from "../search"
+import { bug } from "../util"
 
 export type MetacriticScore = number | "tbd" | "not found"
 

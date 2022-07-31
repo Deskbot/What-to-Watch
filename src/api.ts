@@ -1,4 +1,6 @@
 export * from "./output"
-export * as metacritic from "./metacritic"
+export * as imdb from "./sources/imdb"
+export * as metacritic from "./sources/metacritic"
+export * as rottentomatoes from "./sources/rottentomatoes"
 export * as search from "./search"
 export * as util from "./util"
