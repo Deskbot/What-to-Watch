@@ -1,10 +1,9 @@
 import * as fs from "fs"
-import * as minimist from "minimist"
 import * as process from "process"
-import * as readline from "readline"
-import { csvHeaderRow, getCsv, getJson } from "./output"
-import { limitConcurrent } from "./util"
 import { stdout } from "process"
+import * as readline from "readline"
+import { getArgs } from "./args"
+import { csvHeaderRow, getCsv, getJson } from "./output"
 
 try {
     main()
@@ -14,7 +13,7 @@ try {
 }
 
 function main() {
-    const args = minimist(process.argv.slice(2))
+    const args = getArgs()
 
     if (args["h"] || args["help"]) {
         return printHelp()
@@ -34,13 +33,9 @@ function main() {
             : process.stdin
     )
 
-    const rateLimit = parseInt(args["rate-limit"]) || 5
-    const getMovieData = limitConcurrent(
-        rateLimit,
-        csv
-            ? getCsv
-            : getJson
-    )
+    const getMovieData = csv
+        ? getCsv
+        : getJson
 
     // generate and write out the result
     if (csv) {

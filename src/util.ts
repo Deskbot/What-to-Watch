@@ -152,6 +152,19 @@ export function nonNaN<T>(num: number, fallback: T): number | T {
     }
 }
 
+export function once<T>(f: () => T): () => T {
+    let called = false
+    let result: T
+
+    return () => {
+        if (!called) {
+            result = f()
+        }
+
+        return result
+    }
+}
+
 export function printable(val: string | number | undefined): string {
     if (val === undefined) return ""
     return val.toString()
