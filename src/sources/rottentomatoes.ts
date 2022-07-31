@@ -25,7 +25,7 @@ type SearchedMovie = {
     name: string
     url: string
     audienceScore: {
-        score: string
+        score?: string
     }
     criticsScore: {
         value: number | null
@@ -70,7 +70,7 @@ export async function getRottenTomatoesData(movie: string): Promise<RottenTomato
 function convertSearchData(data: SearchedMovie): RottenTomatoesResult {
     const criticScore = data.criticsScore.value
 
-    const audienceScore = parseInt(data.audienceScore.score)
+    const audienceScore = data.audienceScore.score ? parseInt(data.audienceScore.score) : "not found"
     if (Number.isNaN(audienceScore)) {
         bug()
     }
