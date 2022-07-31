@@ -40,13 +40,13 @@ export function closestSearchResult<T>(
 
             // is this as good as or better than our current best
             if (productLeven <= matchLevenshtein) {
-                matchLevenshtein = productLeven
 
                 // this product is better, so replace the list
                 if (productLeven !== matchLevenshtein) {
                     bestMatches.splice(0)
                 }
 
+                matchLevenshtein = productLeven
                 bestMatches.push(product)
             }
         }
