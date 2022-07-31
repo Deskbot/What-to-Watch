@@ -2,7 +2,7 @@ import * as cheerio from "cheerio"
 import fetch from "node-fetch"
 import * as querystring from "querystring"
 import { closestSearchResult } from "../search"
-import { bug, lazyMap } from "../util"
+import { bug, buildMapFromAsyncOptional } from "../util"
 
 export type ImdbScore = number | "not found"
 
@@ -42,7 +42,7 @@ async function search(movie: string): Promise<SearchResult | undefined> {
     )
 
     // get scores outside of promises
-    const searchResultScores = await lazyMap(bestResults, async (searchResult) => {
+    const searchResultScores = await buildMapFromAsyncOptional(bestResults, async (searchResult) => {
         const score = await searchResult.getScore()
         if (score !== "not found") {
             return score

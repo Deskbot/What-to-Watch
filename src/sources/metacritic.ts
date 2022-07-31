@@ -2,7 +2,7 @@ import * as cheerio from "cheerio"
 import fetch from "node-fetch"
 import * as querystring from "querystring"
 import { closestSearchResult } from "../search"
-import { bug } from "../util"
+import { bug, buildMapFromAsyncOptional } from "../util"
 
 export type MetacriticScore = number | "tbd" | "not found"
 
@@ -20,10 +20,7 @@ export async function getMetacriticData(movie: string): Promise<MetacriticResult
     const name = `${productData.name} (${productData.year})`
     const url = productData.reviewUrl
 
-    const reviewPageText = await fetch(url).then(res => res.text())
-    const reviewPage = cheerio.load(reviewPageText)
-
-    const { metascore, userscore } = await getScores(reviewPage)
+    const { metascore, userscore } = await getScoresByUrl(url)
 
     return {
         name,
@@ -85,14 +82,52 @@ async function search(movie: string): Promise<TargetMovie | undefined> {
         .toArray()
         .map(searchPage)
 
-    const bestResult = closestSearchResult(
+    const bestResults = closestSearchResult(
         movie,
         searchResults,
         product => product.text().trim()
-    )[0] // TOOD tiebreak properly
+    )
 
-    if (!bestResult) return undefined
+    // when there are several equally good matches (e.g. films with the same name),
+    // output the one with the best metascore
 
+    // get scores
+
+    const possibleTargets = bestResults.map(extractInfo)
+
+    const searchResultScores = await buildMapFromAsyncOptional(possibleTargets, async (match) => {
+        const { metascore } = await getScoresByUrl(match.reviewUrl)
+
+        if (typeof metascore === "number") {
+            return metascore
+        }
+
+        return undefined
+    })
+
+    // return the one with the best score
+
+    let bestScore: number | undefined = undefined
+    let bestTarget: TargetMovie | undefined
+
+    for (const [result, score] of searchResultScores) {
+        if (bestScore === undefined || score > bestScore) {
+            bestTarget = result
+            bestScore = score
+        }
+    }
+
+    return bestTarget
+}
+
+async function getScoresByUrl(url: string) {
+    const reviewPageText = await fetch(url).then(res => res.text())
+    const reviewPage = cheerio.load(reviewPageText)
+
+    return getScores(reviewPage)
+}
+
+function extractInfo(bestResult: cheerio.Cheerio): TargetMovie {
     const link = bestResult.find(".product_title").find("a")
 
     const name = link.text().trim()
