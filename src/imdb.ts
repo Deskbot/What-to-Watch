@@ -40,11 +40,26 @@ async function search(movie: string): Promise<SearchResult | undefined> {
         result => result.getName(),
     )
 
-    const bestResultsWithAScore = await asyncFilter(bestResults, async result => await result.getScore() !== "not found")
+    const scores = new Map<SearchResult, number>()
+    const scorePromises: Promise<void>[] = []
 
-    const bestResult = getHighest(bestResultsWithAScore, (result1, result2) => result1.getYear() - result2.getYear())
+    for (const result of bestResults) {
+        scorePromises.push(result.getScore().then((score) => {
+            if (score !== "not found") {
+                scores.set(result, score)
+            }
+        }))
+    }
 
-    return bestResult
+    await Promise.all(scorePromises)
+
+    const bestScore = getHighest([...scores.values()], (s1, s2) => s1 - s2)
+
+    const resultsWithBestScore = [...scores.entries()]
+        .filter(([_, score]) => score === bestScore)
+        .map(([result,_]) => result)
+
+    return getHighest(resultsWithBestScore, (result1, result2) => result1.getYear() - result2.getYear())
 }
 
 function getResultsFromSearchPage(searchPage: cheerio.Root): SearchResult[] {
