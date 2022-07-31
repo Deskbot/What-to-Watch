@@ -12,6 +12,10 @@
             "args": [
                 "--json"
             ],
+            "runtimeArgs": [
+                "-r",
+                "source-map-support/register"
+            ],
 
             "type": "node",
             "request": "launch",
