@@ -18,46 +18,69 @@ export async function getImdbData(movie: string): Promise<ImdbResult | undefined
         return undefined
     }
 
-    const { name, url } = searchResult
-
-    const reviewPageText = await fetch(url).then(res => res.text())
-    const reviewPage = cheerio.load(reviewPageText)
-
-    const score = await getScore(reviewPage)
-
     return {
-        name,
-        score,
-        url,
+        name: searchResult.getName(),
+        score: await searchResult.getScore(),
+        url: searchResult.getUrl(),
     }
 }
 
-interface TargetMovie {
-    name: string
-    url: string
-}
-
-async function search(movie: string): Promise<TargetMovie | undefined> {
+async function search(movie: string): Promise<SearchResult | undefined> {
     const movieStr = querystring.escape(movie)
     const searchUrl = `https://www.imdb.com/find?q=${movieStr}&s=tt&ttype=ft`
 
     const searchPageText = await fetch(searchUrl).then(res => res.text())
     const searchPage = cheerio.load(searchPageText)
 
+    const searchResults = getResultsFromSearchPage(searchPage)
+
+    const bestResult = closestSearchResult(
+        movie,
+        searchResults.filter(result => result.getIsReleased()),
+        result => result.getName(),
+        (result1, result2) => result1.getYear() - result2.getYear()
+    )
+
+    return bestResult
+}
+
+function getResultsFromSearchPage(searchPage: cheerio.Root): SearchResult[] {
     const searchResults = searchPage(".article")
         .find(".result_text")
         .toArray()
         .map(searchPage)
 
-    function isReleased(elem: cheerio.Cheerio): boolean {
-        return getYear(elem) !== -1
+    return searchResults.map(dom => new SearchResult(dom))
+}
+
+class SearchResult {
+    private year: number | undefined
+    private isReleased: boolean | undefined
+    private name: string | undefined
+    private url: string | undefined
+    private score: ImdbScore | undefined
+
+    constructor(private dom: cheerio.Cheerio) {}
+
+    getIsReleased(): boolean {
+        if (this.isReleased !== undefined) {
+            return this.isReleased
+        }
+
+        this.isReleased = this.getYear() !== -1
+        return this.isReleased
     }
 
-    const getYearRegex = /^.* \(([0-9]+)\)$/ // capture group 1 is the numbers inside the parentheses
-    function getYear(elem: cheerio.Cheerio): number {
-        const name = getName(elem)
+    private static getYearRegex = /^.* \(([0-9]+)\)$/ // capture group 1 is the numbers inside the parentheses
 
-        const result = getYearRegex.exec(name)
+    getYear(): number {
+        if (this.year !== undefined) {
+            return this.year
+        }
+
+        const name = this.getName()
+
+        const result = SearchResult.getYearRegex.exec(name)
         if (result === null) {
             return -1 // no year given
         }
@@ -69,37 +92,48 @@ async function search(movie: string): Promise<TargetMovie | undefined> {
             return -1 // no year given
         }
 
+        this.year = year
         return year
     }
 
-    function getName(elem: cheerio.Cheerio): string {
-        return elem.text().trim()
+    getName(): string {
+        if (this.name !== undefined) {
+            return this.name
+        }
+
+        this.name = this.dom.text().trim()
+        return this.name
     }
 
-    const bestResult = closestSearchResult(
-        movie,
-        searchResults.filter(isReleased),
-        getName,
-        (movie1, movie2) => getYear(movie1) - getYear(movie2)
-    )
+    getUrl() {
+        if (this.url !== undefined) {
+            return this.url
+        }
 
-    if (!bestResult) return undefined
+        const href = this.dom.find("a").attr("href")
+        if (!href) bug()
 
-    const name = bestResult.text().trim()
+        const url = absoluteUrl(href)
+        if (!url) bug()
 
-    const href = bestResult.find("a").attr("href")
-    if (!href) bug()
+        this.url = url
+        return url
+    }
 
-    const reviewUrl = absoluteUrl(href)
-    if (!reviewUrl) bug()
+    async getScore() {
+        if (this.score !== undefined) {
+            return this.score
+        }
 
-    return {
-        name,
-        url: reviewUrl,
+        const reviewPageText = await fetch(this.getUrl()).then(res => res.text())
+        const reviewPage = cheerio.load(reviewPageText)
+
+        this.score = await getScoreFromPage(reviewPage)
+        return this.score
     }
 }
 
-async function getScore(reviewPage: cheerio.Root): Promise<ImdbScore> {
+async function getScoreFromPage(reviewPage: cheerio.Root): Promise<ImdbScore> {
     const scoreStr = reviewPage.root()
         .find("[data-testid=hero-rating-bar__aggregate-rating__score]")
         .first()
