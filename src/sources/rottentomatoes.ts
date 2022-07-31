@@ -42,7 +42,13 @@ export async function getRottenTomatoesData(movie: string): Promise<RottenTomato
 
     const searchResponseText = await rottenTomatoesFetch(searchUrl, { headers: { "User-Agent": userAgent }})
         .then(res => res.text())
-    const searchResponse = JSON.parse(searchResponseText) as SearchResults
+
+    try {
+        var searchResponse = JSON.parse(searchResponseText) as SearchResults
+    } catch (err) {
+        console.error(err)
+        bug()
+    }
 
     // add the year to the item name
     for (const item of searchResponse.movie.items) {
