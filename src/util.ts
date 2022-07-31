@@ -38,6 +38,23 @@ export function escapeDoubleQuotes(s: string, replacement: string): string {
     return s.replace(allDoubleQuotes, replacement)
 }
 
+export function getHighest<T>(arr: readonly T[], comparator: (t1: T, t2: T) => number): T | undefined{
+    if (arr.length === 0) return undefined
+
+    let highest = arr[0]
+
+    for (let i = 1; i < arr.length; i++) {
+        const elem = arr[i]
+        const comparison = comparator(highest, elem)
+
+        if (comparison <= 0) {
+            highest = elem
+        }
+    }
+
+    return highest
+}
+
 /**
  * @param num Number of calls to the given function that can be spawned
  *            (i.e. waiting to resolve) at once.
