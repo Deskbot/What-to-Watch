@@ -54,12 +54,16 @@ async function search(movie: string): Promise<TargetMovie | undefined> {
         const name = getName(elem)
 
         const result = getYearRegex.exec(name)
-        if (result === null) bug()
+        if (result === null) {
+            return -1 // no year given
+        }
 
         const yearStr = result[1]
 
         const year = parseInt(yearStr)
-        if (Number.isNaN(year)) bug()
+        if (Number.isNaN(year)) {
+            return -1 // no year given
+        }
 
         return year
     }
