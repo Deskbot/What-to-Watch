@@ -99,12 +99,22 @@ class SearchResult {
         return year
     }
 
+    // if 2 movies with the same name are released in the same year, imdb puts parentheses to differentiate
+    private static romanNumeralParentheses = /\([ivxldcm]+\)/gi
+    // 2 or more spaces in sequence
+    private static whitespace = /\s\s+/g
+
     getName(): string {
         if (this.name !== undefined) {
             return this.name
         }
 
-        this.name = this.dom.text().trim()
+        let name = this.dom.text()
+        name = name.replace(SearchResult.romanNumeralParentheses, "") // remove all roman numeral parentheses
+        name = name.replace(SearchResult.whitespace, " ") // the above step may have introduced whitespace
+        name = name.trim()
+
+        this.name = name
         return this.name
     }
 
