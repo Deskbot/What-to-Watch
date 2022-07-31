@@ -1,7 +1,7 @@
 import fetch from "node-fetch"
 import * as querystring from "querystring"
 import { closestSearchResult } from "../search"
-import { bug } from "../util"
+import { average, bug, getHighest } from "../util"
 
 export type RottenTomatoesScore = number | "not found"
 
@@ -45,7 +45,13 @@ export async function getRottenTomatoesData(movie: string): Promise<RottenTomato
     }
 
     // find best match
-    const targetResult = closestSearchResult(movie, searchResponse.movie.items, item => item.name)[0] // TOOD tiebreak properly
+    const targetResults = closestSearchResult(movie, searchResponse.movie.items, item => item.name)
+
+    // if there are multiple equally good matches, choose the highest critic scoring one
+    const targetResult = getHighest(
+        targetResults,
+        (result1, result2) => result1.criticsScore.value - result2.criticsScore.value
+    )
     if (targetResult === undefined) {
         return undefined
     }
