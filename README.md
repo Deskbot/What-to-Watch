@@ -73,7 +73,6 @@ Arguments:
 -h | --help      : Print help.
 --readme         : Print the readme.
 --json           : Output in JSON format (instead of CSV).
---rate-limit     : Set the maximum number of movies that can be queried simultaneously. If set too high, queries will be rejected by the websites queried. (defaults to 3)
 ```
 
 e.g. `what-to-watch list_of_movies.txt --json`
@@ -127,10 +126,6 @@ There are often multiple movies with the same name released in different years. 
 The JSON output has fields for hyperlinks to where the data came from. In the CSV output, these urls are encoded as hyperlinks in the cell containing the related data.
 
 The hyperlinks are encoded as `=HYPERLINK("url","label")`, which is a valid formula with the same behaviour across Libre Office Calc, Google Sheets, and Microsoft Office Excel, and probably several others.
-
-## Rate Limiting
-
-Your requests are rate limited to prevent the websites rejecting you and causing a timeout.
 
 ## Privacy
 

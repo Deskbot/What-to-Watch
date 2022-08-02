@@ -1,11 +1,10 @@
 import * as cheerio from "cheerio"
 import fetch from "node-fetch"
 import * as querystring from "querystring"
-import { getRateLimit } from "../args"
 import { closestSearchResult } from "../search"
 import { bug, buildMapFromAsyncOptional, limitConcurrent } from "../util"
 
-const imdbFetch = limitConcurrent(getRateLimit(), fetch)
+const imdbFetch = limitConcurrent(2, fetch)
 
 export type ImdbScore = number | "not found"
 

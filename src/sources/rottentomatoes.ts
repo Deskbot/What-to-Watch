@@ -1,10 +1,9 @@
 import fetch from "node-fetch"
 import * as querystring from "querystring"
-import { getRateLimit } from "../args"
 import { closestSearchResult } from "../search"
 import { bug, getHighest, limitConcurrent } from "../util"
 
-const rottenTomatoesFetch = limitConcurrent(getRateLimit(), fetch)
+const rottenTomatoesFetch = limitConcurrent(4, fetch)
 
 export type RottenTomatoesScore = number | "not found"
 

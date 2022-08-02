@@ -1,11 +1,10 @@
 import * as cheerio from "cheerio"
 import fetch from "node-fetch"
 import * as querystring from "querystring"
-import { getRateLimit } from "../args"
 import { closestSearchResult } from "../search"
 import { bug, buildMapFromAsyncOptional, limitConcurrent } from "../util"
 
-const metacriticFetch = limitConcurrent(getRateLimit(), fetch)
+const metacriticFetch = limitConcurrent(5, fetch)
 
 export type MetacriticScore = number | "tbd" | "not found"
 
