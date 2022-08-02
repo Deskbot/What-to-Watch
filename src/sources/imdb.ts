@@ -4,7 +4,7 @@ import * as querystring from "querystring"
 import { closestSearchResult } from "../search"
 import { bug, buildMapFromAsyncOptional, limitConcurrent } from "../util"
 
-const imdbFetch = limitConcurrent(2, fetch)
+const imdbFetch = limitConcurrent(1, fetch)
 
 export type ImdbScore = number | "not found"
 
