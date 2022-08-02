@@ -152,6 +152,12 @@ export function nonNaN<T>(num: number, fallback: T): number | T {
     }
 }
 
+export function numberOr<T extends unknown, F>(val: T, fallback: F): T | F {
+    return typeof val === "number"
+        ? val
+        : fallback
+}
+
 export function once<T>(f: () => T): () => T {
     let called = false
     let result: T
