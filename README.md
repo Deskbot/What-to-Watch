@@ -4,10 +4,9 @@ This program takes a list of movie names and outputs their scores given by vario
 
 Data is collected from:
 
-* howlongtobeat.com
-* gog.com
 * metacritic.com
-* steampowered.com
+* imdb.com
+* rottentomatoes.com
 
 The output format is either of:
 
