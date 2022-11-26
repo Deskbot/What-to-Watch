@@ -1,4 +1,5 @@
 import fetch from "node-fetch"
+import * as cheerio from "cheerio"
 import * as querystring from "querystring"
 import { closestSearchResult } from "../search"
 import { bug, getHighest, limitConcurrent } from "../util"
@@ -33,57 +34,59 @@ type SearchedMovie = {
 }
 
 export async function getRottenTomatoesData(movie: string): Promise<RottenTomatoesResult | undefined> {
-    const movieStr = querystring.escape(movie)
-    const searchUrl = `https://www.rottentomatoes.com/napi/search/all?searchQuery=${movieStr}&type=movie`
+    const searchUrl = `https://www.rottentomatoes.com/search?search=${querystring.escape(movie)}`
 
     // make the website like us
     const userAgent = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:103.0) Gecko/20100101 Firefox/103.0"
 
-    const searchResponseText = await rottenTomatoesFetch(searchUrl, { headers: { "User-Agent": userAgent }})
+    const searchPageText = await rottenTomatoesFetch(searchUrl, {
+        method: "GET",
+        headers: { "User-Agent": userAgent },
+    })
         .then(res => res.text())
 
-    try {
-        var searchResponse = JSON.parse(searchResponseText) as SearchResults
-    } catch (err) {
-        console.error(err)
-        bug()
-    }
+    const searchPage = cheerio.load(searchPageText)
 
-    // add the year to the item name
-    for (const item of searchResponse.movie.items) {
-        item.name = `${item.name} (${item.releaseYear})`
-    }
+    const searchResults = searchPage("search-page-result[type=movie]")
+        .toArray()
+        .map(searchPage)
+        .map(makeSearchResult)
 
     // find best match
-    const targetResults = closestSearchResult(movie, searchResponse.movie.items, item => item.name)
+    const targetResults = closestSearchResult(movie, searchResults, item => item.name)
     if (targetResults.length === 0) {
         return undefined
     }
 
-    const targetResult = getHighest(
+    return getHighest(
         targetResults,
-        (result1, result2) => (result1.criticsScore.value ?? -1) - (result2.criticsScore.value ?? -1)
+        (result1, result2) => {
+            if (typeof result1.criticScore !== "number") {
+                return -1
+            }
+
+            if (typeof result2.criticScore !== "number") {
+                return 1
+            }
+
+            return result1.criticScore - result2.criticScore
+        }
     )
-
-    if (targetResult === undefined) {
-        return undefined
-    }
-
-    return convertSearchData(targetResult)
 }
 
-function convertSearchData(data: SearchedMovie): RottenTomatoesResult {
-    const criticScore = data.criticsScore.value
+function makeSearchResult(dom: cheerio.Cheerio): RottenTomatoesResult {
+    const link = dom.find("[slot=title]")
 
-    const audienceScore = data.audienceScore.score ? parseInt(data.audienceScore.score) : "not found"
-    if (Number.isNaN(audienceScore)) {
-        bug()
-    }
+    const name = link.text() + dom.find("[class=year]").text()
+    const url = link.attr("href") ?? ""
+    const criticScore = parseInt(dom.find("[class=percentage]").text().replace("%", ""))
+    const audienceScore = 123456789
 
     return {
-        name: data.name,
-        url: data.url,
-        criticScore: criticScore ?? "not found",
+        name,
+        url,
+        criticScore: Number.isNaN(criticScore) ? "not found" : criticScore,
         audienceScore,
     }
 }
+
