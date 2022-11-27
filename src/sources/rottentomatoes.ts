@@ -46,7 +46,7 @@ export async function getRottenTomatoesData(movie: string): Promise<RottenTomato
         return undefined
     }
 
-    return await targetResultElem[0].toRottenTomatoesScore()
+    return targetResultElem[0].toRottenTomatoesResult()
 }
 
 class SearchResult {
@@ -81,7 +81,7 @@ class SearchResult {
         return Number.isNaN(percentage) ? "not found" : percentage
     }
 
-    async toRottenTomatoesScore(): Promise<RottenTomatoesResult> {
+    async toRottenTomatoesResult(): Promise<RottenTomatoesResult> {
         const link = this.searchResultElem.find("[slot=title]")
 
         const name = this.getName()
