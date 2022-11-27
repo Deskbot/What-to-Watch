@@ -69,7 +69,7 @@ async function makeSearchResult(searchResultRow: cheerio.Cheerio): Promise<Rotte
 
     const name = link.text() + searchResultRow.find("[class=year]").text().trim()
     const url = link.attr("href") ?? ""
-    const criticScore = parseInt(searchResultRow.find("[class=percentage]").text().replace("%", ""))
+    const criticScore = parseInt(searchResultRow.attr("tomatometerscore") ?? "")
     const audienceScore = await getAudienceScore(url)
 
     return {
@@ -86,8 +86,8 @@ async function getAudienceScore(reviewPageUrl: string): Promise<RottenTomatoesSc
 
     const reviewPage = cheerio.load(reviewPageText)
 
-    const percentageText = reviewPage("score-icon-audience [class=percentage").text()
-    const percentage = parseInt(percentageText)
+    const percentageText = reviewPage("score-icon-audience").attr("percentage")
+    const percentage = parseInt(percentageText ?? "")
 
     return Number.isNaN(percentage) ? "not found" : percentage
 }
