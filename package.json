@@ -1,6 +1,6 @@
 {
   "name": "what-to-watch",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Score aggregator for lists of movies",
   "main": "build/api.js",
   "type": "commonjs",
@@ -22,7 +22,7 @@
     "/README.md"
   ],
   "bin": {
-    "what-to-play": "./bin/what-to-watch"
+    "what-to-watch": "./bin/what-to-watch"
   },
   "repository": {
     "type": "git",
