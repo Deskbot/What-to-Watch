@@ -35,23 +35,30 @@ export async function getRottenTomatoesData(movie: string): Promise<RottenTomato
 
     const searchPage = cheerio.load(searchPageText)
 
-    const searchResultElems = searchPage("search-page-result[type=movie] search-page-media-row")
+    const searchResults = searchPage("search-page-result[type=movie] search-page-media-row")
         .toArray()
         .map(searchPage)
         .map(elem => new SearchResult(elem))
 
     // find best match
-    const targetResultElem = closestSearchResult(movie, searchResultElems, result => result.getName())
-    if (targetResultElem.length === 0) {
+    const targetResults = closestSearchResult(movie, searchResults, result => result.getName())
+    if (targetResults.length === 0) {
         return undefined
     }
 
-    return targetResultElem[0].toRottenTomatoesResult()
+    // if there are multiple matches, ignore any without a score (e.g. Shrek (2018))
+    const targetResultsFiltered = targetResults.filter(searchResult => searchResult.getCriticScore() !== "not found")
+    if (targetResultsFiltered.length === 0) {
+        return targetResults[0].toRottenTomatoesResult()
+    }
+
+    return targetResultsFiltered[0].toRottenTomatoesResult()
 }
 
 class SearchResult {
     private link: string | undefined
     private name: string | undefined
+    private criticScore: RottenTomatoesScore | undefined
 
     constructor(private searchResultElem: cheerio.Cheerio) {}
 
@@ -67,6 +74,13 @@ class SearchResult {
         const name = this.name = this.getLink().trim()
         const year = this.searchResultElem.find("[class=year]").text();
         return `${name} (${year})`
+    }
+
+    getCriticScore() {
+        if (this.criticScore !== undefined) return this.criticScore
+
+        const criticScoreNum = parseInt(this.searchResultElem.attr("tomatometerscore") ?? "")
+        return this.criticScore = Number.isNaN(criticScoreNum) ? "not found" : criticScoreNum
     }
 
     private async getAudienceScore(reviewPageUrl: string): Promise<RottenTomatoesScore> {
@@ -86,13 +100,13 @@ class SearchResult {
 
         const name = this.getName()
         const url = link.attr("href") ?? ""
-        const criticScore = parseInt(this.searchResultElem.attr("tomatometerscore") ?? "")
+        const criticScore = this.getCriticScore()
         const audienceScore = await this.getAudienceScore(url)
 
         return {
             name,
             url,
-            criticScore: Number.isNaN(criticScore) ? "not found" : criticScore,
+            criticScore,
             audienceScore,
         }
     }
