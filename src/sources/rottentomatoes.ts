@@ -84,7 +84,7 @@ class SearchResult {
         if (this.name !== undefined) return this.name
 
         const name = this.name = this.getLink().trim()
-        const year = this.searchResultElem.attr("releaseyear")
+        const year = this.searchResultElem.attr("releaseyear") ?? ""
         return `${name} (${year})`
     }
 
