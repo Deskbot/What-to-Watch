@@ -64,8 +64,8 @@ class SearchResult {
     getName() {
         if (this.name !== undefined) return this.name
 
-        const name = this.name = this.getLink()
-        const year = this.searchResultElem.find("[class=year]").text().trim();
+        const name = this.name = this.getLink().trim()
+        const year = this.searchResultElem.find("[class=year]").text();
         return `${name} (${year})`
     }
 
