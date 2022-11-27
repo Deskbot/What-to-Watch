@@ -2,7 +2,7 @@ import * as cheerio from "cheerio"
 import fetch, { RequestInfo, RequestInit } from "node-fetch"
 import * as querystring from "querystring"
 import { closestSearchResult } from "../search"
-import { limitConcurrent } from "../util"
+import { getHighest, limitConcurrent } from "../util"
 
 const rottenTomatoesFetch = limitConcurrent(
     4,
@@ -46,13 +46,25 @@ export async function getRottenTomatoesData(movie: string): Promise<RottenTomato
         return undefined
     }
 
-    // if there are multiple matches, ignore any without a score (e.g. Shrek (2018))
-    const targetResultsFiltered = targetResults.filter(searchResult => searchResult.getCriticScore() !== "not found")
-    if (targetResultsFiltered.length === 0) {
-        return targetResults[0].toRottenTomatoesResult()
-    }
+    // if there are multiple matches, get the one with the best score
+    // to disambiguate Shrek (2001) from Shrek (2018)
 
-    return targetResultsFiltered[0].toRottenTomatoesResult()
+    const bestResult = getHighest(targetResults, (result1, result2) => {
+        const criticScore1 = result1.getCriticScore()
+        const criticScore2 = result2.getCriticScore()
+
+        if (typeof criticScore1 !== "number") {
+            return -1
+        }
+
+        if (typeof criticScore2 !== "number") {
+            return 1
+        }
+
+        return criticScore1 - criticScore2
+    })
+
+    return bestResult?.toRottenTomatoesResult()
 }
 
 class SearchResult {
@@ -60,7 +72,7 @@ class SearchResult {
     private name: string | undefined
     private criticScore: RottenTomatoesScore | undefined
 
-    constructor(private searchResultElem: cheerio.Cheerio) {}
+    constructor(private searchResultElem: cheerio.Cheerio) { }
 
     private getLink() {
         if (this.link !== undefined) return this.link
