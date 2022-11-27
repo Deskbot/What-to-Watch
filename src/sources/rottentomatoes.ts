@@ -68,22 +68,22 @@ export async function getRottenTomatoesData(movie: string): Promise<RottenTomato
 }
 
 class SearchResult {
-    private link: string | undefined
+    private linkToMoviePage: cheerio.Cheerio | undefined
     private name: string | undefined
     private criticScore: RottenTomatoesScore | undefined
 
     constructor(private searchResultElem: cheerio.Cheerio) { }
 
-    private getLink() {
-        if (this.link !== undefined) return this.link
+    private getLinkToMoviePage() {
+        if (this.linkToMoviePage !== undefined) return this.linkToMoviePage
 
-        return this.link = this.searchResultElem.find("[slot=title]").text()
+        return this.linkToMoviePage = this.searchResultElem.find("[slot=title]")
     }
 
     getName() {
         if (this.name !== undefined) return this.name
 
-        const name = this.name = this.getLink().trim()
+        const name = this.name = this.getLinkToMoviePage().text().trim()
         const year = this.searchResultElem.attr("releaseyear") ?? ""
         return `${name} (${year})`
     }
@@ -108,10 +108,8 @@ class SearchResult {
     }
 
     async toRottenTomatoesResult(): Promise<RottenTomatoesResult> {
-        const link = this.searchResultElem.find("[slot=title]")
-
         const name = this.getName()
-        const url = link.attr("href") ?? ""
+        const url = this.getLinkToMoviePage().attr("href") ?? ""
         const criticScore = this.getCriticScore()
         const audienceScore = await this.getAudienceScore(url)
 
