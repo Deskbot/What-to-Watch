@@ -1,19 +1,5 @@
 import { fail } from "assert"
 
-export async function asyncFilter<T>(arr: T[], filterer: (elem: T) => Promise<boolean>): Promise<T[]> {
-    const result: T[] = []
-
-    const matches = await Promise.all(arr.map(filterer))
-
-    for (let i = 0; i < matches.length; i++) {
-        if (matches[i]) {
-            result.push(arr[i])
-        }
-    }
-
-    return result
-}
-
 export function average(arr: number[]): number {
     let total = 0
     const len = arr.length
@@ -23,11 +9,6 @@ export function average(arr: number[]): number {
     }
 
     return total / len
-}
-
-export function bindUndefined<T, U>(val: T | undefined, func: (val: T) => U): U | undefined {
-    if (val === undefined) return undefined
-    return func(val)
 }
 
 export function bug(): never {
@@ -50,23 +31,6 @@ export function csvFriendly(s: string): string {
 const allDoubleQuotes = /"/g
 export function escapeDoubleQuotes(s: string, replacement: string): string {
     return s.replace(allDoubleQuotes, replacement)
-}
-
-export function getHighest<T>(arr: readonly T[], comparator: (t1: T, t2: T) => number): T | undefined {
-    if (arr.length === 0) return undefined
-
-    let highest = arr[0]
-
-    for (let i = 1; i < arr.length; i++) {
-        const elem = arr[i]
-        const comparison = comparator(highest, elem)
-
-        if (comparison <= 0) {
-            highest = elem
-        }
-    }
-
-    return highest
 }
 
 export async function buildMapFromAsyncOptional<K, V>(keys: readonly K[], mapper: (key: K) => Promise<V | undefined>): Promise<Map<K, V>> {
@@ -142,14 +106,6 @@ export function limitConcurrent<A extends any[], R>(
     }
 
     return limitedFunc
-}
-
-export function nonNaN<T>(num: number, fallback: T): number | T {
-    if (Number.isNaN(num)) {
-        return fallback
-    } else {
-        return num
-    }
 }
 
 export function numberOr<T extends unknown, F>(val: T, fallback: F): T | F {

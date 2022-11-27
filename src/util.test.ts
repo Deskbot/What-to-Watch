@@ -18,13 +18,4 @@ export class UtilSuite {
         strictEqual(util.escapeDoubleQuotes('"',   '""'), '""')
         strictEqual(util.escapeDoubleQuotes('""',  '""'), '""""')
     }
-
-    @Test()
-    getHighest() {
-        const isLeftBigger = (n1: number, n2: number) => n1 - n2
-
-        strictEqual(util.getHighest([], isLeftBigger), undefined)
-        strictEqual(util.getHighest([2], isLeftBigger), 2)
-        strictEqual(util.getHighest([3,1,2], isLeftBigger), 3)
-    }
 }

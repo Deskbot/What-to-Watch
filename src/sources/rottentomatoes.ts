@@ -2,7 +2,7 @@ import * as cheerio from "cheerio"
 import fetch, { RequestInfo, RequestInit } from "node-fetch"
 import * as querystring from "querystring"
 import { closestSearchResult } from "../search"
-import { getHighest, limitConcurrent } from "../util"
+import { limitConcurrent } from "../util"
 
 const rottenTomatoesFetch = limitConcurrent(
     4,
@@ -35,59 +35,65 @@ export async function getRottenTomatoesData(movie: string): Promise<RottenTomato
 
     const searchPage = cheerio.load(searchPageText)
 
-    const searchResultsPromise = searchPage("search-page-result[type=movie] search-page-media-row")
+    const searchResultElems = searchPage("search-page-result[type=movie] search-page-media-row")
         .toArray()
         .map(searchPage)
-        .map(makeSearchResult)
-
-    const searchResults = await Promise.all(searchResultsPromise)
+        .map(elem => new SearchResult(elem))
 
     // find best match
-    const targetResults = closestSearchResult(movie, searchResults, item => item.name)
-    if (targetResults.length === 0) {
+    const targetResultElem = closestSearchResult(movie, searchResultElems, result => result.getName())
+    if (targetResultElem.length === 0) {
         return undefined
     }
 
-    return getHighest(
-        targetResults,
-        (result1, result2) => {
-            if (typeof result1.criticScore !== "number") {
-                return -1
-            }
-
-            if (typeof result2.criticScore !== "number") {
-                return 1
-            }
-
-            return result1.criticScore - result2.criticScore
-        }
-    )
+    return await targetResultElem[0].toRottenTomatoesScore()
 }
 
-async function makeSearchResult(searchResultRow: cheerio.Cheerio): Promise<RottenTomatoesResult> {
-    const link = searchResultRow.find("[slot=title]")
+class SearchResult {
+    private link: string | undefined
+    private name: string | undefined
 
-    const name = link.text() + searchResultRow.find("[class=year]").text().trim()
-    const url = link.attr("href") ?? ""
-    const criticScore = parseInt(searchResultRow.attr("tomatometerscore") ?? "")
-    const audienceScore = await getAudienceScore(url)
+    constructor(private searchResultElem: cheerio.Cheerio) {}
 
-    return {
-        name,
-        url,
-        criticScore: Number.isNaN(criticScore) ? "not found" : criticScore,
-        audienceScore,
+    private getLink() {
+        if (this.link !== undefined) return this.link
+
+        return this.link = this.searchResultElem.find("[slot=title]").text()
     }
-}
 
-async function getAudienceScore(reviewPageUrl: string): Promise<RottenTomatoesScore> {
-    const reviewPageText = await rottenTomatoesFetch(reviewPageUrl)
-        .then(res => res.text())
+    getName() {
+        if (this.name !== undefined) return this.name
 
-    const reviewPage = cheerio.load(reviewPageText)
+        const name = this.name = this.getLink()
+        const year = this.searchResultElem.find("[class=year]").text().trim();
+        return `${name} (${year})`
+    }
 
-    const percentageText = reviewPage("score-icon-audience").attr("percentage")
-    const percentage = parseInt(percentageText ?? "")
+    private async getAudienceScore(reviewPageUrl: string): Promise<RottenTomatoesScore> {
+        const reviewPageText = await rottenTomatoesFetch(reviewPageUrl)
+            .then(res => res.text())
 
-    return Number.isNaN(percentage) ? "not found" : percentage
+        const reviewPage = cheerio.load(reviewPageText)
+
+        const percentageText = reviewPage("score-icon-audience").attr("percentage")
+        const percentage = parseInt(percentageText ?? "")
+
+        return Number.isNaN(percentage) ? "not found" : percentage
+    }
+
+    async toRottenTomatoesScore(): Promise<RottenTomatoesResult> {
+        const link = this.searchResultElem.find("[slot=title]")
+
+        const name = this.getName()
+        const url = link.attr("href") ?? ""
+        const criticScore = parseInt(this.searchResultElem.attr("tomatometerscore") ?? "")
+        const audienceScore = await this.getAudienceScore(url)
+
+        return {
+            name,
+            url,
+            criticScore: Number.isNaN(criticScore) ? "not found" : criticScore,
+            audienceScore,
+        }
+    }
 }
