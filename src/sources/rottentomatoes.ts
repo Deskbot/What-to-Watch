@@ -1,10 +1,22 @@
-import fetch from "node-fetch"
 import * as cheerio from "cheerio"
+import fetch, { RequestInfo, RequestInit } from "node-fetch"
 import * as querystring from "querystring"
 import { closestSearchResult } from "../search"
-import { bug, getHighest, limitConcurrent } from "../util"
+import { getHighest, limitConcurrent } from "../util"
 
-const rottenTomatoesFetch = limitConcurrent(4, fetch)
+const rottenTomatoesFetch = limitConcurrent(
+    4,
+    (url: RequestInfo, init?: (RequestInit & { headers?: { [key: string]: string } })) => {
+        // make the website like us
+        const userAgent = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:103.0) Gecko/20100101 Firefox/103.0"
+
+        init = init ?? {}
+        init.headers = init.headers ?? {}
+        init.headers["User-Agent"] = userAgent
+
+        return fetch(url, init)
+    }
+)
 
 export type RottenTomatoesScore = number | "not found"
 
@@ -15,42 +27,20 @@ export type RottenTomatoesResult = {
     audienceScore: RottenTomatoesScore
 }
 
-type SearchResults = {
-    movie: {
-        items: SearchedMovie[]
-    }
-}
-
-type SearchedMovie = {
-    name: string
-    url: string
-    audienceScore: {
-        score?: string
-    }
-    criticsScore: {
-        value: number | null
-    }
-    releaseYear: string
-}
-
 export async function getRottenTomatoesData(movie: string): Promise<RottenTomatoesResult | undefined> {
     const searchUrl = `https://www.rottentomatoes.com/search?search=${querystring.escape(movie)}`
 
-    // make the website like us
-    const userAgent = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:103.0) Gecko/20100101 Firefox/103.0"
-
-    const searchPageText = await rottenTomatoesFetch(searchUrl, {
-        method: "GET",
-        headers: { "User-Agent": userAgent },
-    })
+    const searchPageText = await rottenTomatoesFetch(searchUrl)
         .then(res => res.text())
 
     const searchPage = cheerio.load(searchPageText)
 
-    const searchResults = searchPage("search-page-result[type=movie]")
+    const searchResultsPromise = searchPage("search-page-result[type=movie] search-page-media-row")
         .toArray()
         .map(searchPage)
         .map(makeSearchResult)
+
+    const searchResults = await Promise.all(searchResultsPromise)
 
     // find best match
     const targetResults = closestSearchResult(movie, searchResults, item => item.name)
@@ -74,13 +64,13 @@ export async function getRottenTomatoesData(movie: string): Promise<RottenTomato
     )
 }
 
-function makeSearchResult(dom: cheerio.Cheerio): RottenTomatoesResult {
-    const link = dom.find("[slot=title]")
+async function makeSearchResult(searchResultRow: cheerio.Cheerio): Promise<RottenTomatoesResult> {
+    const link = searchResultRow.find("[slot=title]")
 
-    const name = link.text() + dom.find("[class=year]").text()
+    const name = link.text() + searchResultRow.find("[class=year]").text().trim()
     const url = link.attr("href") ?? ""
-    const criticScore = parseInt(dom.find("[class=percentage]").text().replace("%", ""))
-    const audienceScore = 123456789
+    const criticScore = parseInt(searchResultRow.find("[class=percentage]").text().replace("%", ""))
+    const audienceScore = await getAudienceScore(url)
 
     return {
         name,
@@ -90,3 +80,14 @@ function makeSearchResult(dom: cheerio.Cheerio): RottenTomatoesResult {
     }
 }
 
+async function getAudienceScore(reviewPageUrl: string): Promise<RottenTomatoesScore> {
+    const reviewPageText = await rottenTomatoesFetch(reviewPageUrl)
+        .then(res => res.text())
+
+    const reviewPage = cheerio.load(reviewPageText)
+
+    const percentageText = reviewPage("score-icon-audience [class=percentage").text()
+    const percentage = parseInt(percentageText)
+
+    return Number.isNaN(percentage) ? "not found" : percentage
+}
