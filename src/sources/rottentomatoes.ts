@@ -83,7 +83,7 @@ class SearchResult {
     getName() {
         if (this.name !== undefined) return this.name
 
-        const name = this.name = this.getLinkToMoviePage().text().trim()
+        const name = this.getLinkToMoviePage().text().trim()
         const year = this.searchResultElem.attr("releaseyear") ?? ""
         return `${name} (${year})`
     }
