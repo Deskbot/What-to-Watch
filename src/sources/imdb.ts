@@ -1,10 +1,19 @@
 import * as cheerio from "cheerio"
-import fetch from "node-fetch"
+import fetch, { RequestInfo, RequestInit } from "node-fetch"
 import * as querystring from "querystring"
 import { closestSearchResult } from "../search"
 import { bug, buildMapFromAsyncOptional, limitConcurrent } from "../util"
 
-const imdbFetch = limitConcurrent(1, fetch)
+const imdbFetch = limitConcurrent(1, (url: RequestInfo, init?: (RequestInit & { headers?: { [key: string]: string } })) => {
+    // make the website like us
+    const userAgent = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/111.0"
+
+    init = init ?? {}
+    init.headers = init.headers ?? {}
+    init.headers["User-Agent"] = userAgent
+
+    return fetch(url, init)
+})
 
 export type ImdbScore = number | "not found"
 
@@ -29,13 +38,16 @@ export async function getImdbData(movie: string): Promise<ImdbResult | undefined
 
 async function search(movie: string): Promise<SearchResult | undefined> {
     const movieStr = querystring.escape(movie)
-    const searchUrl = `https://www.imdb.com/find?q=${movieStr}&s=tt&ttype=ft`
+    const searchUrl = `https://www.imdb.com/find?q=${movieStr}&s=tt&ttype=ft&ref_=fn_ft`
 
-    const searchPageText = await imdbFetch(searchUrl).then(res => res.text())
+    const searchPageText = await imdbFetch(searchUrl)
+        .then(res => res.text())
+
     const searchPage = cheerio.load(searchPageText)
 
-    const searchResults = searchPage(".article")
-        .find(".result_text")
+    const searchResults = searchPage("ul.ipc-metadata-list")
+        .first()
+        .find("li")
         .toArray()
         .map(searchPage)
         .map(dom => new SearchResult(dom))
@@ -91,21 +103,12 @@ class SearchResult {
         return this.isReleased
     }
 
-    private static getYearRegex = /^.* \(([0-9]+)\)$/ // capture group 1 is the numbers inside the parentheses
-
     getYear(): number {
         if (this.year !== undefined) {
             return this.year
         }
 
-        const name = this.getName()
-
-        const result = SearchResult.getYearRegex.exec(name)
-        if (result === null) {
-            return -1 // no year given
-        }
-
-        const yearStr = result[1]
+        const yearStr = this.dom.find(".ipc-metadata-list-summary-item__tl").first().text()
 
         const year = parseInt(yearStr)
         if (Number.isNaN(year)) {
@@ -126,7 +129,9 @@ class SearchResult {
             return this.name
         }
 
-        let name = this.dom.text()
+        const a = this.dom.find(".ipc-metadata-list-summary-item__t")
+        let name = a.text()
+
         name = name.replace(SearchResult.romanNumeralParentheses, "") // remove all roman numeral parentheses
         name = name.replace(SearchResult.whitespace, " ") // the above step may have introduced whitespace
         name = name.trim()
@@ -140,7 +145,9 @@ class SearchResult {
             return this.url
         }
 
-        const href = this.dom.find("a").attr("href")
+        const a = this.dom.find(".ipc-metadata-list-summary-item__t")
+
+        const href = a.attr("href")
         if (!href) bug()
 
         const url = absoluteUrl(href)
@@ -155,7 +162,7 @@ class SearchResult {
             return this.score
         }
 
-        const reviewPageText = await fetch(this.getUrl()).then(res => res.text())
+        const reviewPageText = await imdbFetch(this.getUrl()).then(res => res.text())
         const reviewPage = cheerio.load(reviewPageText)
 
         this.score = await getScoreFromPage(reviewPage)
