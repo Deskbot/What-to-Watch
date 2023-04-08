@@ -51,11 +51,12 @@ async function search(movie: string): Promise<SearchResult | undefined> {
         .toArray()
         .map(searchPage)
         .map(dom => new SearchResult(dom))
+        .filter(result => result.getIsReleased())
 
     // find best string match
     const bestResults = closestSearchResult(
         movie,
-        searchResults.filter(result => result.getIsReleased()),
+        searchResults,
         result => result.getName(),
     )
 
