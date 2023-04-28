@@ -87,13 +87,11 @@ class SearchResult {
     readonly year: number
     readonly name: string
     readonly url: string
-    readonly score: Promise<ImdbScore>
 
     constructor(dom: cheerio.Cheerio) {
         this.url = this.getUrl(dom)
         this.year = this.getYear(dom)
         this.name = this.getName(dom)
-        this.score =  this.getScore(this.url)
     }
 
     isReleased(): boolean {
