@@ -41,7 +41,7 @@ export async function getRottenTomatoesData(movie: string): Promise<RottenTomato
         .map(elem => new SearchResult(elem))
 
     // find best match
-    const targetResults = closestSearchResult(movie, searchResults, result => result.getName())
+    const targetResults = closestSearchResult(movie, searchResults, result => result.name)
     if (targetResults.length === 0) {
         return undefined
     }
@@ -50,8 +50,8 @@ export async function getRottenTomatoesData(movie: string): Promise<RottenTomato
     // to disambiguate Shrek (2001) from Shrek (2018)
 
     const bestResult = getHighest(targetResults, (result1, result2) => {
-        const criticScore1 = result1.getCriticScore()
-        const criticScore2 = result2.getCriticScore()
+        const criticScore1 = result1.criticScore
+        const criticScore2 = result2.criticScore
 
         if (typeof criticScore1 !== "number") {
             return -1
@@ -68,65 +68,45 @@ export async function getRottenTomatoesData(movie: string): Promise<RottenTomato
 }
 
 class SearchResult {
-    private linkToMoviePage: cheerio.Cheerio | undefined
-    private name: string | undefined
-    private reviewPageUrl: string | undefined
-    private criticScore: RottenTomatoesScore | undefined
+    readonly name: string
+    readonly reviewPageUrl: string
+    readonly criticScore: RottenTomatoesScore
 
-    constructor(private searchResultElem: cheerio.Cheerio) { }
+    constructor(searchResultElem: cheerio.Cheerio) {
+        const linkToMoviePage = searchResultElem.find("[slot=title]")
 
-    private getLinkToMoviePage(): cheerio.Cheerio {
-        if (this.linkToMoviePage !== undefined) return this.linkToMoviePage
+        const name = linkToMoviePage.text().trim()
+        const year = searchResultElem.attr("releaseyear") ?? ""
 
-        return this.linkToMoviePage = this.searchResultElem.find("[slot=title]")
+        this.name = `${name} (${year})`
+        this.reviewPageUrl = linkToMoviePage.attr("href") ?? ""
+        this.criticScore = this.getCriticScore(searchResultElem)
     }
 
-    getName(): string {
-        if (this.name !== undefined) return this.name
-
-        const name = this.getLinkToMoviePage().text().trim()
-        const year = this.searchResultElem.attr("releaseyear") ?? ""
-        return `${name} (${year})`
+    private getCriticScore(searchResultElem: cheerio.Cheerio): RottenTomatoesScore {
+        const criticScoreNum = parseInt(searchResultElem.attr("tomatometerscore") ?? "")
+        return Number.isNaN(criticScoreNum) ? "not found" : criticScoreNum
     }
 
-    getCriticScore(): RottenTomatoesScore {
-        if (this.criticScore !== undefined) return this.criticScore
-
-        const criticScoreNum = parseInt(this.searchResultElem.attr("tomatometerscore") ?? "")
-        return this.criticScore = Number.isNaN(criticScoreNum) ? "not found" : criticScoreNum
-    }
-
-    private async getAudienceScore(): Promise<RottenTomatoesScore> {
-        const reviewPageText = await rottenTomatoesFetch(this.getReviewPageUrl())
-            .then(res => res.text())
-
-        const reviewPage = cheerio.load(reviewPageText)
-
-        const percentageText = reviewPage("score-icon-audience").attr("percentage")
-        const percentage = parseInt(percentageText ?? "")
-
-        return Number.isNaN(percentage) ? "not found" : percentage
-    }
-
-    private getReviewPageUrl(): string {
-        if (this.reviewPageUrl !== undefined) {
-            return this.reviewPageUrl
-        }
-
-        return this.reviewPageUrl = this.getLinkToMoviePage().attr("href") ?? ""
-    }
-
-    async toRottenTomatoesResult(): Promise<RottenTomatoesResult> {
-        const name = this.getName()
-        const url = this.getReviewPageUrl()
-        const criticScore = this.getCriticScore()
-        const audienceScore = await this.getAudienceScore()
-
+    async toRottenTomatoesResult() {
+        const audienceScore = await getAudienceScore(this.reviewPageUrl);
         return {
-            name,
-            url,
-            criticScore,
+            name: this.name,
+            url: this.reviewPageUrl,
+            criticScore: this.criticScore,
             audienceScore,
         }
     }
+}
+
+async function getAudienceScore(reviewPageUrl: string): Promise<RottenTomatoesScore> {
+    const reviewPageText = await rottenTomatoesFetch(reviewPageUrl)
+        .then(res => res.text())
+
+    const reviewPage = cheerio.load(reviewPageText)
+
+    const percentageText = reviewPage("score-icon-audience").attr("percentage")
+    const percentage = parseInt(percentageText ?? "")
+
+    return Number.isNaN(percentage) ? "not found" : percentage
 }
