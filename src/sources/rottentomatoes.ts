@@ -70,17 +70,18 @@ export async function getRottenTomatoesData(movie: string): Promise<RottenTomato
 class SearchResult {
     private linkToMoviePage: cheerio.Cheerio | undefined
     private name: string | undefined
+    private reviewPageUrl: string | undefined
     private criticScore: RottenTomatoesScore | undefined
 
     constructor(private searchResultElem: cheerio.Cheerio) { }
 
-    private getLinkToMoviePage() {
+    private getLinkToMoviePage(): cheerio.Cheerio {
         if (this.linkToMoviePage !== undefined) return this.linkToMoviePage
 
         return this.linkToMoviePage = this.searchResultElem.find("[slot=title]")
     }
 
-    getName() {
+    getName(): string {
         if (this.name !== undefined) return this.name
 
         const name = this.getLinkToMoviePage().text().trim()
@@ -88,15 +89,15 @@ class SearchResult {
         return `${name} (${year})`
     }
 
-    getCriticScore() {
+    getCriticScore(): RottenTomatoesScore {
         if (this.criticScore !== undefined) return this.criticScore
 
         const criticScoreNum = parseInt(this.searchResultElem.attr("tomatometerscore") ?? "")
         return this.criticScore = Number.isNaN(criticScoreNum) ? "not found" : criticScoreNum
     }
 
-    private async getAudienceScore(reviewPageUrl: string): Promise<RottenTomatoesScore> {
-        const reviewPageText = await rottenTomatoesFetch(reviewPageUrl)
+    private async getAudienceScore(): Promise<RottenTomatoesScore> {
+        const reviewPageText = await rottenTomatoesFetch(this.getReviewPageUrl())
             .then(res => res.text())
 
         const reviewPage = cheerio.load(reviewPageText)
@@ -107,11 +108,19 @@ class SearchResult {
         return Number.isNaN(percentage) ? "not found" : percentage
     }
 
+    private getReviewPageUrl(): string {
+        if (this.reviewPageUrl !== undefined) {
+            return this.reviewPageUrl
+        }
+
+        return this.reviewPageUrl = this.getLinkToMoviePage().attr("href") ?? ""
+    }
+
     async toRottenTomatoesResult(): Promise<RottenTomatoesResult> {
         const name = this.getName()
-        const url = this.getLinkToMoviePage().attr("href") ?? ""
+        const url = this.getReviewPageUrl()
         const criticScore = this.getCriticScore()
-        const audienceScore = await this.getAudienceScore(url)
+        const audienceScore = await this.getAudienceScore()
 
         return {
             name,
