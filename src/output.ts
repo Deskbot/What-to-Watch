@@ -2,7 +2,7 @@ import { getImdbData, ImdbResult } from "./sources/imdb"
 import { getMetacriticData, MetacriticResult } from "./sources/metacritic"
 import { getRottenTomatoesData, RottenTomatoesResult } from "./sources/rottentomatoes"
 import { count, getCellInCol, toHyperlink } from "./spreadsheet"
-import { numberOr, average, csvFriendly, printable } from "./util"
+import { average, csvFriendly, numberOr, printable } from "./util"
 
 export interface AllData {
     movie: string

@@ -10,7 +10,8 @@
 
             "program": "${workspaceFolder}/src/main.ts",
             "args": [
-                "--json"
+                "/home/thomas/Downloads/20230407 movies.txt",
+                // "--json",
             ],
             "runtimeArgs": [
                 "-r",
@@ -19,7 +20,7 @@
 
             "type": "node",
             "request": "launch",
-            "console": "externalTerminal",
+            "console": "integratedTerminal",
             "skipFiles": [
                 "<node_internals>/**"
             ],

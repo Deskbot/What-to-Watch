@@ -2,7 +2,7 @@ import * as cheerio from "cheerio"
 import fetch, { RequestInfo, RequestInit } from "node-fetch"
 import * as querystring from "querystring"
 import { closestSearchResult } from "../search"
-import { bug, buildMapFromAsyncOptional, limitConcurrent } from "../util"
+import { bug, limitConcurrent } from "../util"
 
 const imdbFetch = limitConcurrent(1, (url: RequestInfo, init?: (RequestInit & { headers?: { [key: string]: string } })) => {
     // make the website like us
@@ -24,19 +24,6 @@ export type ImdbResult = {
 }
 
 export async function getImdbData(movie: string): Promise<ImdbResult | undefined> {
-    const searchResult = await search(movie)
-    if (!searchResult) {
-        return undefined
-    }
-
-    return {
-        name: searchResult.name,
-        score: await searchResult.score,
-        url: searchResult.url,
-    }
-}
-
-async function search(movie: string): Promise<SearchResult | undefined> {
     const movieStr = querystring.escape(movie)
     const searchUrl = `https://www.imdb.com/find?q=${movieStr}&s=tt&ttype=ft&ref_=fn_ft`
 
@@ -62,37 +49,37 @@ async function search(movie: string): Promise<SearchResult | undefined> {
         }
     }
 
+    const results = await Promise.all(searchResults.map(searchResult => searchResult.toImdbResult()))
+
     // find best string match
     const bestResults = closestSearchResult(
         movie,
-        searchResults,
+        results,
         result => result.name,
     )
-
-    // get scores outside of promises
-    const searchResultScores = await buildMapFromAsyncOptional(bestResults, async (searchResult) => {
-        const score = await searchResult.score
-        if (score !== "not found") {
-            return score
-        }
-
-        return undefined
-    })
 
     // when there are several equally good matches (e.g. films with the same name),
     // output the one with the best score
 
     let bestScore: ImdbScore | undefined = undefined
-    let bestResult: SearchResult | undefined
+    let bestResult: ImdbResult | undefined
 
-    for (const [result, score] of searchResultScores) {
-        if (bestScore === undefined || score > bestScore) {
+    for (const result of bestResults) {
+        if (bestScore === undefined || result.score > bestScore) {
             bestResult = result
-            bestScore = score
+            bestScore = result.score
         }
     }
 
-    return bestResult
+    if (!bestResult) {
+        return undefined
+    }
+
+    return {
+        name: bestResult.name,
+        url: bestResult.url,
+        score: bestResult.score,
+    }
 }
 
 class SearchResult {
@@ -156,6 +143,14 @@ class SearchResult {
         const reviewPage = cheerio.load(reviewPageText)
 
         return getScoreFromPage(reviewPage)
+    }
+
+    async toImdbResult(): Promise<ImdbResult> {
+        return {
+            name: this.name,
+            url: this.url,
+            score: await this.getScore(this.url),
+        }
     }
 }
 
