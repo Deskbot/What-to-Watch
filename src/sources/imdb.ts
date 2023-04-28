@@ -49,14 +49,15 @@ export async function getImdbData(movie: string): Promise<ImdbResult | undefined
         }
     }
 
-    const results = await Promise.all(searchResults.map(searchResult => searchResult.toImdbResult()))
-
     // find best string match
     const bestResults = closestSearchResult(
         movie,
-        results,
+        searchResults,
         result => result.name,
     )
+
+    // get score data of best results
+    const imdbResults = await Promise.all(bestResults.map(r => r.toImdbResult()))
 
     // when there are several equally good matches (e.g. films with the same name),
     // output the one with the best score
@@ -64,7 +65,7 @@ export async function getImdbData(movie: string): Promise<ImdbResult | undefined
     let bestScore: ImdbScore | undefined = undefined
     let bestResult: ImdbResult | undefined
 
-    for (const result of bestResults) {
+    for (const result of imdbResults) {
         if (bestScore === undefined || result.score > bestScore) {
             bestResult = result
             bestScore = result.score
