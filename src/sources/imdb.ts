@@ -30,9 +30,9 @@ export async function getImdbData(movie: string): Promise<ImdbResult | undefined
     }
 
     return {
-        name: searchResult.getName(),
-        score: await searchResult.getScore(),
-        url: searchResult.getUrl(),
+        name: searchResult.name,
+        score: await searchResult.score,
+        url: searchResult.url,
     }
 }
 
@@ -45,24 +45,33 @@ async function search(movie: string): Promise<SearchResult | undefined> {
 
     const searchPage = cheerio.load(searchPageText)
 
-    const searchResults = searchPage("ul.ipc-metadata-list")
+    // find movies in the search page
+
+    const searchResultsList = searchPage("ul.ipc-metadata-list")
         .first()
-        .find("li")
+        .children("li")
         .toArray()
-        .map(searchPage)
-        .map(dom => new SearchResult(dom))
-        .filter(result => result.getIsReleased())
+
+    const searchResults: SearchResult[] = []
+
+    for (const li of searchResultsList) {
+        const result = new SearchResult(searchPage(li))
+
+        if (result.isReleased()) {
+            searchResults.push(result)
+        }
+    }
 
     // find best string match
     const bestResults = closestSearchResult(
         movie,
         searchResults,
-        result => result.getName(),
+        result => result.name,
     )
 
     // get scores outside of promises
     const searchResultScores = await buildMapFromAsyncOptional(bestResults, async (searchResult) => {
-        const score = await searchResult.getScore()
+        const score = await searchResult.score
         if (score !== "not found") {
             return score
         }
@@ -87,36 +96,30 @@ async function search(movie: string): Promise<SearchResult | undefined> {
 }
 
 class SearchResult {
-    private year: number | undefined
-    private isReleased: boolean | undefined
-    private name: string | undefined
-    private url: string | undefined
-    private score: ImdbScore | undefined
+    readonly year: number
+    readonly name: string
+    readonly url: string
+    readonly score: Promise<ImdbScore>
 
-    constructor(private dom: cheerio.Cheerio) {}
-
-    getIsReleased(): boolean {
-        if (this.isReleased !== undefined) {
-            return this.isReleased
-        }
-
-        this.isReleased = this.getYear() !== -1
-        return this.isReleased
+    constructor(dom: cheerio.Cheerio) {
+        this.url = this.getUrl(dom)
+        this.year = this.getYear(dom)
+        this.name = this.getName(dom)
+        this.score =  this.getScore(this.url)
     }
 
-    getYear(): number {
-        if (this.year !== undefined) {
-            return this.year
-        }
+    isReleased(): boolean {
+        return this.year !== -1
+    }
 
-        const yearStr = this.dom.find(".ipc-metadata-list-summary-item__tl").first().text()
+    private getYear(dom: cheerio.Cheerio): number {
+        const yearStr = dom.find(".ipc-metadata-list-summary-item__tl").first().text()
 
         const year = parseInt(yearStr)
         if (Number.isNaN(year)) {
             return -1 // no year given
         }
 
-        this.year = year
         return year
     }
 
@@ -125,28 +128,19 @@ class SearchResult {
     // 2 or more spaces in sequence
     private static whitespace = /\s\s+/g
 
-    getName(): string {
-        if (this.name !== undefined) {
-            return this.name
-        }
-
-        const a = this.dom.find(".ipc-metadata-list-summary-item__t")
+    private getName(dom: cheerio.Cheerio): string {
+        const a = dom.find("a.ipc-metadata-list-summary-item__t")
         let name = a.text()
 
         name = name.replace(SearchResult.romanNumeralParentheses, "") // remove all roman numeral parentheses
         name = name.replace(SearchResult.whitespace, " ") // the above step may have introduced whitespace
         name = name.trim()
 
-        this.name = name
-        return this.name
+        return name
     }
 
-    getUrl() {
-        if (this.url !== undefined) {
-            return this.url
-        }
-
-        const a = this.dom.find(".ipc-metadata-list-summary-item__t")
+    private getUrl(dom: cheerio.Cheerio): string {
+        const a = dom.find("a.ipc-metadata-list-summary-item__t")
 
         const href = a.attr("href")
         if (!href) bug()
@@ -154,20 +148,14 @@ class SearchResult {
         const url = absoluteUrl(href)
         if (!url) bug()
 
-        this.url = url
         return url
     }
 
-    async getScore() {
-        if (this.score !== undefined) {
-            return this.score
-        }
-
-        const reviewPageText = await imdbFetch(this.getUrl()).then(res => res.text())
+    private async getScore(url: string): Promise<ImdbScore> {
+        const reviewPageText = await imdbFetch(url).then(res => res.text())
         const reviewPage = cheerio.load(reviewPageText)
 
-        this.score = await getScoreFromPage(reviewPage)
-        return this.score
+        return getScoreFromPage(reviewPage)
     }
 }
 
