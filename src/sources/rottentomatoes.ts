@@ -4,19 +4,16 @@ import * as querystring from "querystring"
 import { closestSearchResult } from "../search"
 import { getHighest, limitConcurrent } from "../util"
 
-const rottenTomatoesFetch = limitConcurrent(
-    4,
-    (url: RequestInfo, init?: (RequestInit & { headers?: { [key: string]: string } })) => {
-        // make the website like us
-        const userAgent = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:103.0) Gecko/20100101 Firefox/103.0"
+const rottenTomatoesFetch = (url: RequestInfo, init?: (RequestInit & { headers?: { [key: string]: string } })) => {
+    // make the website like us
+    const userAgent = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:103.0) Gecko/20100101 Firefox/103.0"
 
-        init = init ?? {}
-        init.headers = init.headers ?? {}
-        init.headers["User-Agent"] = userAgent
+    init = init ?? {}
+    init.headers = init.headers ?? {}
+    init.headers["User-Agent"] = userAgent
 
-        return fetch(url, init)
-    }
-)
+    return fetch(url, init)
+}
 
 export type RottenTomatoesScore = number | "not found"
 
@@ -27,7 +24,9 @@ export type RottenTomatoesResult = {
     audienceScore: RottenTomatoesScore
 }
 
-export async function getRottenTomatoesData(movie: string): Promise<RottenTomatoesResult | undefined> {
+export const getRottenTomatoesData = limitConcurrent(4, getData)
+
+export async function getData(movie: string): Promise<RottenTomatoesResult | undefined> {
     const searchUrl = `https://www.rottentomatoes.com/search?search=${querystring.escape(movie)}`
 
     const searchPageText = await rottenTomatoesFetch(searchUrl)

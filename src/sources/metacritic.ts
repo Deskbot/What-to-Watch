@@ -4,8 +4,6 @@ import * as querystring from "querystring"
 import { closestSearchResult } from "../search"
 import { bug, buildMapFromAsyncOptional, limitConcurrent } from "../util"
 
-const metacriticFetch = limitConcurrent(5, fetch)
-
 export type MetacriticScore = number | "tbd" | "not found"
 
 export interface MetacriticResult {
@@ -15,7 +13,9 @@ export interface MetacriticResult {
     userscore: MetacriticScore
 }
 
-export async function getMetacriticData(movie: string): Promise<MetacriticResult | undefined> {
+export const getMetacriticData = limitConcurrent(5, getData)
+
+export async function getData(movie: string): Promise<MetacriticResult | undefined> {
     const productData = await search(movie)
     if (productData === undefined) return undefined
 
@@ -77,7 +77,7 @@ async function search(movie: string): Promise<TargetMovie | undefined> {
     const movieStr = querystring.escape(movie)
     const searchUrl = `https://www.metacritic.com/search/movie/${movieStr}/results`
 
-    const searchPageText = await metacriticFetch(searchUrl).then(res => res.text())
+    const searchPageText = await fetch(searchUrl).then(res => res.text())
     const searchPage = cheerio.load(searchPageText)
 
     const searchResults = searchPage(".main_stats")
