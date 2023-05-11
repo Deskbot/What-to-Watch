@@ -4,7 +4,7 @@ import * as querystring from "querystring"
 import { closestSearchResult } from "../search"
 import { bug, limitConcurrent } from "../util"
 
-const imdbFetch = limitConcurrent(1, (url: RequestInfo, init?: (RequestInit & { headers?: { [key: string]: string } })) => {
+const imdbFetch = (url: RequestInfo, init?: (RequestInit & { headers?: { [key: string]: string } })) => {
     // make the website like us
     const userAgent = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/111.0"
 
@@ -13,7 +13,7 @@ const imdbFetch = limitConcurrent(1, (url: RequestInfo, init?: (RequestInit & { 
     init.headers["User-Agent"] = userAgent
 
     return fetch(url, init)
-})
+}
 
 export type ImdbScore = number | "not found"
 
@@ -23,7 +23,9 @@ export type ImdbResult = {
     score: ImdbScore,
 }
 
-export async function getImdbData(movie: string): Promise<ImdbResult | undefined> {
+export const getImdbData = limitConcurrent(5, getData)
+
+async function getData(movie: string): Promise<ImdbResult | undefined> {
     const movieStr = querystring.escape(movie)
     const searchUrl = `https://www.imdb.com/find?q=${movieStr}&s=tt&ttype=ft&ref_=fn_ft`
 
