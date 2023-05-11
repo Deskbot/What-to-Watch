@@ -52,7 +52,7 @@ function printHelp() {
     console.log("-h | --help      : Print help.")
     console.log("--readme         : Print the readme.")
     console.log("--json           : Output in JSON format (instead of CSV).")
-    console.log("--rate-limit     : Set the maximum number of movies that can be queried simultaneously. If set too high, queries will be rejected by the websites queried. (default: 5)")
+    console.log("--rate-limit     : Set the maximum number of movies that can be queried simultaneously. If set too high, queries will be rejected by the websites queried. (default: 4)")
 }
 
 function printReadme() {

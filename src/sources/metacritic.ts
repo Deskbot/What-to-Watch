@@ -3,6 +3,7 @@ import fetch from "node-fetch"
 import * as querystring from "querystring"
 import { closestSearchResult } from "../search"
 import { bug, buildMapFromAsyncOptional, limitConcurrent } from "../util"
+import { getRateLimit } from "../args"
 
 export type MetacriticScore = number | "tbd" | "not found"
 
@@ -13,7 +14,7 @@ export interface MetacriticResult {
     userscore: MetacriticScore
 }
 
-export const getMetacriticData = limitConcurrent(5, getData)
+export const getMetacriticData = limitConcurrent(getRateLimit(), getData)
 
 export async function getData(movie: string): Promise<MetacriticResult | undefined> {
     const productData = await search(movie)

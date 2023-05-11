@@ -3,6 +3,7 @@ import fetch, { RequestInfo, RequestInit } from "node-fetch"
 import * as querystring from "querystring"
 import { closestSearchResult } from "../search"
 import { bug, limitConcurrent } from "../util"
+import { getRateLimit } from "../args"
 
 const imdbFetch = (url: RequestInfo, init?: (RequestInit & { headers?: { [key: string]: string } })) => {
     // make the website like us
@@ -23,7 +24,7 @@ export type ImdbResult = {
     score: ImdbScore,
 }
 
-export const getImdbData = limitConcurrent(5, getData)
+export const getImdbData = limitConcurrent(getRateLimit(), getData)
 
 async function getData(movie: string): Promise<ImdbResult | undefined> {
     const movieStr = querystring.escape(movie)

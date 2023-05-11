@@ -72,6 +72,7 @@ Arguments:
 -h | --help      : Print help.
 --readme         : Print the readme.
 --json           : Output in JSON format (instead of CSV).
+--rate-limit     : Limit how many movies will be searched for simultaneously from each website.
 ```
 
 e.g. `what-to-watch list_of_movies.txt --json`

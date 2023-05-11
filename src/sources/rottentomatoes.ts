@@ -3,6 +3,7 @@ import fetch, { RequestInfo, RequestInit } from "node-fetch"
 import * as querystring from "querystring"
 import { closestSearchResult } from "../search"
 import { getHighest, limitConcurrent } from "../util"
+import { getRateLimit } from "../args"
 
 const rottenTomatoesFetch = (url: RequestInfo, init?: (RequestInit & { headers?: { [key: string]: string } })) => {
     // make the website like us
@@ -24,7 +25,7 @@ export type RottenTomatoesResult = {
     audienceScore: RottenTomatoesScore
 }
 
-export const getRottenTomatoesData = limitConcurrent(4, getData)
+export const getRottenTomatoesData = limitConcurrent(getRateLimit(), getData)
 
 export async function getData(movie: string): Promise<RottenTomatoesResult | undefined> {
     const searchUrl = `https://www.rottentomatoes.com/search?search=${querystring.escape(movie)}`
