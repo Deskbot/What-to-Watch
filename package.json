@@ -1,6 +1,6 @@
 {
   "name": "what-to-watch",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Score aggregator for lists of movies",
   "main": "build/api.js",
   "type": "commonjs",
